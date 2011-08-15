@@ -17,7 +17,8 @@
 #include <assert.h>
 #include "vector.h"
 
-#define N 1048576
+#define N		131072
+#define ALLOC_EXPECT	17
 
 static int last_capacity;
 static int realloc_count;
@@ -46,7 +47,7 @@ static void test_push(void)
 		realloc_check();
 	}
 
-	assert(realloc_count <= 20);
+	assert(realloc_count <= ALLOC_EXPECT);
 }
 
 static void test_check(int max)
@@ -71,7 +72,7 @@ static void test_pop(void)
 		realloc_check();
 	}
 
-	assert(realloc_count <= 20);
+	assert(realloc_count <= ALLOC_EXPECT);
 	assert(vec.capacity < 1024);
 }
 
@@ -93,7 +94,7 @@ static void test_wiggle(void)
 		realloc_check();
 	}
 
-	assert(realloc_count <= 20);
+	assert(realloc_count <= ALLOC_EXPECT);
 }
 
 static void test_bulk(void)
