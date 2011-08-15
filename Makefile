@@ -18,7 +18,8 @@ TESTS = \
     tests/list.test \
     tests/vector.test \
     tests/rbt.test \
-    tests/rbt_iter.test
+    tests/rbt_iter.test \
+    tests/slab.test
 CFLAGS = -O1 -Wall -ggdb -I.
 CC = gcc
 
@@ -49,6 +50,9 @@ tests/rbt.test: tests/test_rbt.o rbt.o
 	$(CC) -o $@ $^
 
 tests/rbt_iter.test: tests/test_rbt_iter.o rbt.o rbt_iter.o
+	$(CC) -o $@ $^
+
+tests/slab.test: tests/test_slab.o slab.o list.o
 	$(CC) -o $@ $^
 
 %.o: %.c
