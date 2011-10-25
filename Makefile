@@ -21,7 +21,8 @@ TESTS = \
     tests/rbt_iter.test \
     tests/rbt_range.test \
     tests/slab.test \
-    tests/hash.test
+    tests/hash.test \
+    tests/strbuf.test
 CFLAGS = -O1 -Wall -ggdb -I.
 CC = gcc
 
@@ -61,6 +62,9 @@ tests/slab.test: tests/test_slab.o slab.o list.o
 	$(CC) -o $@ $^
 
 tests/hash.test: tests/test_hash.o hash.o
+	$(CC) -o $@ $^
+
+tests/strbuf.test: tests/test_strbuf.o strbuf.o
 	$(CC) -o $@ $^
 
 %.o: %.c
