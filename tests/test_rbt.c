@@ -24,6 +24,9 @@
 struct record {
 	struct rbt_node		node;
 	int			key;
+
+	struct rbt_node		*sum_left;
+	struct rbt_node		*sum_right;
 };
 
 #define N		1024
@@ -48,6 +51,28 @@ static struct rbt tree = {
 	.compare = cmp_record,
 	.root = NULL
 };
+
+static void check_summary(struct rbt_node *n)
+{
+	struct record *r = (struct record *)n;
+
+	if (!n)
+		return;
+
+	if (n->flags & RBT_FLAG_MODIFIED) {
+		assert(!n->parent || (n->parent->flags & RBT_FLAG_MODIFIED));
+
+		check_summary(n->left);
+		check_summary(n->right);
+
+		r->sum_left = n->left;
+		r->sum_right = n->right;
+		n->flags &= ~RBT_FLAG_MODIFIED;
+	} else {
+		assert(r->sum_left == n->left);
+		assert(r->sum_right == n->right);
+	}
+}
 
 static int check_recurse(struct rbt_node *n, struct rbt_node *p)
 {
@@ -76,6 +101,7 @@ static void test_check(void)
 {
 	assert(RBT_IS_BLACK(tree.root));
 	check_recurse(tree.root, NULL);
+	check_summary(tree.root);
 }
 
 static void test_present(int f, int len)

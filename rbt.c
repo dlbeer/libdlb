@@ -26,6 +26,8 @@
 #define MAKE_RED(n)	((n)->flags |= RBT_FLAG_RED)
 #define MAKE_BLACK(n)	((n)->flags &= ~RBT_FLAG_RED)
 
+#define MARK_MODIFIED(n) ((n)->flags |= RBT_FLAG_MODIFIED)
+
 struct rbt_node *rbt_find(const struct rbt *t, const void *key)
 {
 	struct rbt_node *n = t->root;
@@ -58,6 +60,19 @@ static void fix_downptr(struct rbt *t, struct rbt_node *p,
 	}
 }
 
+/* Rotating a node (n) left invalidates the summary for (i.e. changes
+ * the set of descendants of):
+ *
+ *    - n itself
+ *    - n's originally right child
+ *
+ *    B                 D
+ *   / \       ==>     / \
+ *  A   D             B   E
+ *     / \           / \
+ *    C   E         A   C
+ */
+
 static void rotate_left(struct rbt *t, struct rbt_node *n)
 {
 	struct rbt_node *p = n->parent;
@@ -73,6 +88,19 @@ static void rotate_left(struct rbt *t, struct rbt_node *n)
 	r->parent = p;
 	fix_downptr(t, r->parent, n, r);
 }
+
+/* Rotating a node (n) right invalidates the summary for (i.e. changes
+ * the set of descendants of):
+ *
+ *    - n itself
+ *    - n's originally left child
+ *
+ *      D                 B
+ *     / \       ==>     / \
+ *    B   E             A   D
+ *   / \                   / \
+ *  A   C                 C   E
+ */
 
 static void rotate_right(struct rbt *t, struct rbt_node *n)
 {
@@ -102,11 +130,18 @@ static inline struct rbt_node *grandparent(struct rbt_node *n)
 	return n->parent->parent;
 }
 
+/* An invariant holds during repair_after_insert:
+ *
+ *   - at each step, n and its ancestors all have RBT_FLAG_MODIFIED set
+ */
 static void repair_after_insert(struct rbt *t, struct rbt_node *n)
 {
 	/* We may have violated the property that red nodes have only
 	 * black children. Go up from the newly inserted node and
 	 * attempt to fix the property by recolouring nodes.
+	 *
+	 * No structural changes are made here, and no summaries are
+	 * invalidated in this portion.
 	 */
 	for (;;) {
 		struct rbt_node *u;
@@ -135,6 +170,9 @@ static void repair_after_insert(struct rbt *t, struct rbt_node *n)
 
 	/* If the node and its parent descend in different directions,
 	 * we rotate the parent.
+	 *
+	 * The nodes affected by rotation, if any, were already invalidated
+	 * during the insertion.
 	 */
 	if (n == n->parent->left &&
 	    n->parent == grandparent(n)->right) {
@@ -148,6 +186,8 @@ static void repair_after_insert(struct rbt *t, struct rbt_node *n)
 
 	/* Now the node and its parent descend via the same path. We
 	 * recolour and rotate the grandparent to rebalance the tree.
+	 *
+	 * The nodes affected by rotation are already invalidated.
 	 */
 	MAKE_BLACK(n->parent);
 	MAKE_RED(grandparent(n));
@@ -169,6 +209,8 @@ struct rbt_node *rbt_insert(struct rbt *t, const void *key,
 		struct rbt_node *c = *nptr;
 		int r = t->compare(key, *nptr);
 
+		MARK_MODIFIED(c);
+
 		if (!r) {
 			memcpy(n, c, sizeof(*c));
 			return c;
@@ -184,7 +226,9 @@ struct rbt_node *rbt_insert(struct rbt *t, const void *key,
 	n->right = NULL;
 	n->flags = 0;
 	n->parent = p;
+
 	MAKE_RED(n);
+	MARK_MODIFIED(n);
 
 	repair_after_insert(t, n);
 	return NULL;
@@ -192,6 +236,9 @@ struct rbt_node *rbt_insert(struct rbt *t, const void *key,
 
 /* Swap the position of n with that of the lexically smallest node in
  * its right subtree.
+ *
+ * This operation invalidates n, and all nodes on the path from n to
+ * the lexically smallest node. We don't handle that here, though.
  */
 static void swap_with_successor(struct rbt *t, struct rbt_node *n)
 {
@@ -238,6 +285,10 @@ static void swap_with_successor(struct rbt *t, struct rbt_node *n)
 		n->right->parent = n;
 }
 
+/* An invariant holds during repair_after_remove:
+ *
+ *   - at each step, n and its ancestors all have RBT_FLAG_MODIFIED set
+ */
 static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 {
 	struct rbt_node *p, *s;
@@ -267,10 +318,14 @@ static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 		 * the counts.
 		 *
 		 * After this step, we've guaranteed that s is black.
+		 *
+		 * This operation invalidates the sibling, as per the
+		 * normal effects of rotation.
 		 */
 		if (RBT_IS_RED(s)) {
 			MAKE_RED(p);
 			MAKE_BLACK(s);
+			MARK_MODIFIED(s);
 
 			if (n == p->left) {
 				rotate_left(t, p);
@@ -317,15 +372,22 @@ static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 	 *
 	 * We test for this and fix it by a recolouring and rotation
 	 * which does not affect the counts.
+	 *
+	 * This invalidates s and one of its children, depending on
+	 * the direction of rotation.
 	 */
 	if (n == p->left && RBT_IS_BLACK(s->right)) {
 		MAKE_RED(s);
 		MAKE_BLACK(s->left);
+		MARK_MODIFIED(s);
+		MARK_MODIFIED(s->left);
 		rotate_right(t, s);
 		s = s->parent;
 	} else if (n == p->right && RBT_IS_BLACK(s->left)) {
 		MAKE_RED(s);
 		MAKE_BLACK(s->right);
+		MARK_MODIFIED(s);
+		MARK_MODIFIED(s->right);
 		rotate_left(t, s);
 		s = s->parent;
 	}
@@ -337,8 +399,10 @@ static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 	 *
 	 * The far child gets its black parent cut from the path, so
 	 * we recolour it black to balance the count.
+	 *
+	 * s is invalidated by this step if it wasn't already.
 	 */
-	s->flags = p->flags;
+	s->flags = p->flags | RBT_FLAG_MODIFIED;
 	MAKE_BLACK(p);
 
 	if (n == p->left) {
@@ -360,6 +424,11 @@ void rbt_remove(struct rbt *t, struct rbt_node *n)
 	 */
 	if (n->left && n->right)
 		swap_with_successor(t, n);
+
+	/* Everything from n up to the root will now have an invalid
+	 * summary.
+	 */
+	rbt_mark_modified(n);
 
 	/* Replace the pointer to n with that of its only child, if any.
 	 * Then figure out what to do to preserve the tree properties.
@@ -384,4 +453,12 @@ void rbt_remove(struct rbt *t, struct rbt_node *n)
 
 	/* Otherwise, handle the complicated cases. */
 	repair_after_remove(t, n);
+}
+
+void rbt_mark_modified(struct rbt_node *n)
+{
+	while (n) {
+		MARK_MODIFIED(n);
+		n = n->parent;
+	}
 }

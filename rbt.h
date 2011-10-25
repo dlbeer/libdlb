@@ -19,8 +19,12 @@
 
 /* This is the base of a tree node. It should be embedded within a larger
  * data structure containing a key and optionally some data.
+ *
+ * The RBT_FLAG_MODIFIED field is set whenever the set comprising the
+ * node's descendants has changed.
  */
 #define RBT_FLAG_RED		0x01
+#define RBT_FLAG_MODIFIED	0x02
 
 #define RBT_IS_RED(n)		((n) && (n)->flags & RBT_FLAG_RED)
 #define RBT_IS_BLACK(n)		(!(n) || !((n)->flags & RBT_FLAG_RED))
@@ -57,5 +61,8 @@ struct rbt_node *rbt_insert(struct rbt *t, const void *key,
  * returned after being removed.
  */
 void rbt_remove(struct rbt *t, struct rbt_node *n);
+
+/* Mark a node and its ancestors as modified. */
+void rbt_mark_modified(struct rbt_node *n);
 
 #endif
