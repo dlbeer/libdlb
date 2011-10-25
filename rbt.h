@@ -20,13 +20,13 @@
 /* This is the base of a tree node. It should be embedded within a larger
  * data structure containing a key and optionally some data.
  */
-typedef enum {
-	RBT_RED,
-	RBT_BLACK
-} rbt_color_t;
+#define RBT_FLAG_RED		0x01
+
+#define RBT_IS_RED(n)		((n) && (n)->flags & RBT_FLAG_RED)
+#define RBT_IS_BLACK(n)		(!(n) || !((n)->flags & RBT_FLAG_RED))
 
 struct rbt_node {
-	rbt_color_t		color;
+	int			flags;
 	struct rbt_node		*left;
 	struct rbt_node		*right;
 	struct rbt_node		*parent;

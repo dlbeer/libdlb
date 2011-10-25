@@ -23,8 +23,8 @@
  */
 #define MAX_H		128
 
-#define IS_RED(n) ((n) && (n)->color == RBT_RED)
-#define IS_BLACK(n) (!(n) || (n)->color == RBT_BLACK)
+#define MAKE_RED(n)	((n)->flags |= RBT_FLAG_RED)
+#define MAKE_BLACK(n)	((n)->flags &= ~RBT_FLAG_RED)
 
 struct rbt_node *rbt_find(const struct rbt *t, const void *key)
 {
@@ -112,11 +112,11 @@ static void repair_after_insert(struct rbt *t, struct rbt_node *n)
 		struct rbt_node *u;
 
 		if (!n->parent) {
-			n->color = RBT_BLACK;
+			MAKE_BLACK(n);
 			return;
 		}
 
-		if (n->parent->color == RBT_BLACK)
+		if (RBT_IS_BLACK(n->parent))
 			return;
 
 		/* If the both the parent and the uncle of the current
@@ -124,12 +124,12 @@ static void repair_after_insert(struct rbt *t, struct rbt_node *n)
 		 * Otherwise, we have to stop and rotate.
 		 */
 		u = sibling(n->parent);
-		if (!u || u->color == RBT_BLACK)
+		if (RBT_IS_BLACK(u))
 			break;
 
-		u->color = RBT_BLACK;
-		n->parent->color = RBT_BLACK;
-		grandparent(n)->color = RBT_RED;
+		MAKE_BLACK(u);
+		MAKE_BLACK(n->parent);
+		MAKE_RED(grandparent(n));
 		n = grandparent(n);
 	}
 
@@ -149,8 +149,8 @@ static void repair_after_insert(struct rbt *t, struct rbt_node *n)
 	/* Now the node and its parent descend via the same path. We
 	 * recolour and rotate the grandparent to rebalance the tree.
 	 */
-	n->parent->color = RBT_BLACK;
-	grandparent(n)->color = RBT_RED;
+	MAKE_BLACK(n->parent);
+	MAKE_RED(grandparent(n));
 
 	if (n == n->parent->left)
 		rotate_right(t, grandparent(n));
@@ -182,8 +182,9 @@ struct rbt_node *rbt_insert(struct rbt *t, const void *key,
 	*nptr = n;
 	n->left = NULL;
 	n->right = NULL;
-	n->color = RBT_RED;
+	n->flags = 0;
 	n->parent = p;
+	MAKE_RED(n);
 
 	repair_after_insert(t, n);
 	return NULL;
@@ -211,22 +212,22 @@ static void swap_with_successor(struct rbt *t, struct rbt_node *n)
 	} else {
 		struct rbt_node *left = n->left;
 		struct rbt_node *right = s->right;
-		rbt_color_t n_col = n->color;
-		rbt_color_t s_col = s->color;
+		int n_flags = n->flags;
+		int s_flags = s->flags;
 
 		/* If there is no intermediate between n and s,
 		 * we can't just swap contents because we'll end
 		 * up with a pointer loop.
 		 */
 		s->left = left;
-		s->color = n_col;
+		s->flags = n_flags;
 		s->right = n;
 		s->parent = p;
 
 		n->right = right;
 		n->left = NULL;
 		n->parent = s;
-		n->color = s_col;
+		n->flags = s_flags;
 	}
 
 	fix_downptr(t, p, n, s);
@@ -267,9 +268,10 @@ static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 		 *
 		 * After this step, we've guaranteed that s is black.
 		 */
-		if (s->color == RBT_RED) {
-			p->color = RBT_RED;
-			s->color = RBT_BLACK;
+		if (RBT_IS_RED(s)) {
+			MAKE_RED(p);
+			MAKE_BLACK(s);
+
 			if (n == p->left) {
 				rotate_left(t, p);
 				s = p->right;
@@ -287,9 +289,9 @@ static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 		 *
 		 * Otherwise, we need to perform the final fix by rotation.
 		 */
-		if (p->color == RBT_BLACK &&
-		    IS_BLACK(s->left) && IS_BLACK(s->right)) {
-			s->color = RBT_RED;
+		if (RBT_IS_BLACK(p) &&
+		    RBT_IS_BLACK(s->left) && RBT_IS_BLACK(s->right)) {
+			MAKE_RED(s);
 			n = p;
 			p = n->parent;
 			continue;
@@ -302,10 +304,10 @@ static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 	 * can swap their colours. This increases the count through n, but
 	 * doesn't affect the count through n, thus fixing the tree.
 	 */
-	if (p->color == RBT_RED &&
-	    IS_BLACK(s->left) && IS_BLACK(s->right)) {
-		s->color = RBT_RED;
-		p->color = RBT_BLACK;
+	if (RBT_IS_RED(p) &&
+	    RBT_IS_BLACK(s->left) && RBT_IS_BLACK(s->right)) {
+		MAKE_RED(s);
+		MAKE_BLACK(p);
 		return;
 	}
 
@@ -316,14 +318,14 @@ static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 	 * We test for this and fix it by a recolouring and rotation
 	 * which does not affect the counts.
 	 */
-	if (n == p->left && IS_BLACK(s->right)) {
-		s->color = RBT_RED;
-		s->left->color = RBT_BLACK;
+	if (n == p->left && RBT_IS_BLACK(s->right)) {
+		MAKE_RED(s);
+		MAKE_BLACK(s->left);
 		rotate_right(t, s);
 		s = s->parent;
-	} else if (n == p->right && IS_BLACK(s->left)) {
-		s->color = RBT_RED;
-		s->right->color = RBT_BLACK;
+	} else if (n == p->right && RBT_IS_BLACK(s->left)) {
+		MAKE_RED(s);
+		MAKE_BLACK(s->right);
 		rotate_left(t, s);
 		s = s->parent;
 	}
@@ -336,14 +338,14 @@ static void repair_after_remove(struct rbt *t, struct rbt_node *n)
 	 * The far child gets its black parent cut from the path, so
 	 * we recolour it black to balance the count.
 	 */
-	s->color = p->color;
-	p->color = RBT_BLACK;
+	s->flags = p->flags;
+	MAKE_BLACK(p);
 
 	if (n == p->left) {
-		s->right->color = RBT_BLACK;
+		MAKE_BLACK(s->right);
 		rotate_left(t, p);
 	} else {
-		s->left->color = RBT_BLACK;
+		MAKE_BLACK(s->left);
 		rotate_right(t, p);
 	}
 }
@@ -370,14 +372,14 @@ void rbt_remove(struct rbt *t, struct rbt_node *n)
 	 */
 	if (s) {
 		s->parent = n->parent;
-		s->color = RBT_BLACK;
+		MAKE_BLACK(s);
 		return;
 	}
 
 	/* If the node we removed was red (and thus has no children), we
 	 * haven't broken anything.
 	 */
-	if (n->color == RBT_RED)
+	if (RBT_IS_RED(n))
 		return;
 
 	/* Otherwise, handle the complicated cases. */

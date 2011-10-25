@@ -58,15 +58,15 @@ static int check_recurse(struct rbt_node *n, struct rbt_node *p)
 
 	assert(n->parent == p);
 
-	if (n->color == RBT_RED) {
-		assert(!n->left || n->left->color == RBT_BLACK);
-		assert(!n->right || n->right->color == RBT_BLACK);
+	if (RBT_IS_RED(n)) {
+		assert(RBT_IS_BLACK(n->left));
+		assert(RBT_IS_BLACK(n->right));
 	}
 
 	lc = check_recurse(n->left, n);
 	rc = check_recurse(n->right, n);
 
-	if (n->color == RBT_RED)
+	if (RBT_IS_RED(n))
 		return lc;
 
 	return lc + 1;
@@ -74,7 +74,7 @@ static int check_recurse(struct rbt_node *n, struct rbt_node *p)
 
 static void test_check(void)
 {
-	assert(!tree.root || tree.root->color == RBT_BLACK);
+	assert(RBT_IS_BLACK(tree.root));
 	check_recurse(tree.root, NULL);
 }
 
@@ -157,7 +157,8 @@ static void dump_recurse(const struct rbt_node *n, int depth)
 	printf("    ");
 	for (i = 0; i < depth; i++)
 		printf("- ");
-	printf("%d (%c)\n", r->key, n->color == RBT_BLACK ? 'b' : 'R');
+	printf("%d (%c)\n", r->key,
+		RBT_IS_BLACK(n) ? 'b' : 'R');
 	dump_recurse(n->right, depth + 1);
 }
 
