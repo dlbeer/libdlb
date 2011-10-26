@@ -34,16 +34,17 @@ void hash_destroy(struct hash *h)
 	memset(h, 0, sizeof(*h));
 }
 
-int hash_capacity_hint(struct hash *h, unsigned int new_size)
+int hash_capacity_hint(struct hash *h, unsigned int hint)
 {
 	struct hash_node **new_table;
 	unsigned int i;
+	unsigned int new_size = 32;
 
-	if (new_size < h->count)
+	if (hint < h->count)
 		return 0;
 
-	if (new_size < 32)
-		new_size = 32;
+	while (new_size < hint)
+		new_size <<= 1;
 
 	for (;;) {
 		int d;
@@ -56,6 +57,9 @@ int hash_capacity_hint(struct hash *h, unsigned int new_size)
 not_prime:
 		new_size++;
 	}
+
+	if (h->size == new_size)
+		return 0;
 
 	new_table = malloc(sizeof(new_table[0]) * new_size);
 	if (!new_table)
@@ -112,7 +116,7 @@ int hash_insert(struct hash *h, const void *key, struct hash_node *ins,
 	struct hash_node *old = NULL;
 
 	if (h->count >= h->size &&
-	    hash_capacity_hint(h, h->size * 2) < 0)
+	    hash_capacity_hint(h, h->count + 1) < 0)
 		return -1;
 
 	ins->next = NULL;
@@ -174,5 +178,5 @@ void hash_remove(struct hash *h, struct hash_node *n)
 	}
 
 	if (h->count * 4 < h->size)
-		hash_capacity_hint(h, h->size / 2);
+		hash_capacity_hint(h, h->count);
 }

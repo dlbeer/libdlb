@@ -73,6 +73,9 @@ int strbuf_capacity_hint(struct strbuf *buf, unsigned int length)
 	while (new_cap < length + 1)
 		new_cap <<= 1;
 
+	if (new_cap == buf->capacity)
+		return 0;
+
 	if (buf->text == strbuf_blank)
 		new_text = malloc(new_cap);
 	else
