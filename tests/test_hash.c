@@ -57,13 +57,14 @@ static void init_words(void)
 		snprintf(words[i].text, sizeof(words[i].text), "%x", i);
 }
 
-static void add_half(int start)
+static void add_half(int start, int flags)
 {
 	int i;
 
 	for (i = start; i < N; i += 2) {
-		struct hash_node *old;
-		int r = hash_insert(&hsh, words[i].text, &words[i].node, &old);
+		struct hash_node *old = NULL;
+		int r = hash_insert(&hsh, words[i].text, &words[i].node,
+				    &old, flags);
 
 		assert(!r);
 		assert(!old);
@@ -100,9 +101,10 @@ static void check_not_present(int start)
 	}
 }
 
-static void test_add_remove(void)
+static void test_add_remove(int flags)
 {
-	add_half(0);
+	add_half(0, flags);
+	assert(hsh.count == N / 2);
 	assert(hsh.size >= N / 2);
 	check_present(0);
 	check_not_present(1);
@@ -110,12 +112,14 @@ static void test_add_remove(void)
 	hash_capacity_hint(&hsh, N);
 	assert(hsh.size >= N);
 
-	add_half(1);
+	add_half(1, flags | HASH_INSERT_UNIQUE);
+	assert(hsh.count == N);
 	assert(hsh.size >= N);
 	check_present(0);
 	check_present(1);
 
 	remove_half(0);
+	assert(hsh.count == N / 2);
 	assert(hsh.size >= N / 2);
 	check_not_present(0);
 	check_present(1);
@@ -123,6 +127,7 @@ static void test_add_remove(void)
 	remove_half(1);
 	check_not_present(0);
 	check_not_present(1);
+	assert(hsh.count == 0);
 }
 
 int main(void)
@@ -130,7 +135,8 @@ int main(void)
 	init_words();
 
 	hash_init(&hsh, word_hash, word_compare);
-	test_add_remove();
+	test_add_remove(0);
+	test_add_remove(HASH_INSERT_PREHASHED);
 	hash_destroy(&hsh);
 
 	return 0;

@@ -105,7 +105,7 @@ struct hash_node *hash_find(const struct hash *h, const void *key)
 }
 
 int hash_insert(struct hash *h, const void *key, struct hash_node *ins,
-		struct hash_node **old_ret)
+		struct hash_node **old_ret, int flags)
 {
 	unsigned int index;
 	struct hash_node *n;
@@ -116,9 +116,19 @@ int hash_insert(struct hash *h, const void *key, struct hash_node *ins,
 		return -1;
 
 	ins->next = NULL;
-	ins->code = h->func(key);
+
+	if (!(flags & HASH_INSERT_PREHASHED))
+		ins->code = h->func(key);
 
 	index = ins->code % h->size;
+
+	if (flags & HASH_INSERT_UNIQUE) {
+		ins->next = h->table[index];
+		h->table[index] = ins;
+		h->count++;
+		return 0;
+	}
+
 	n = h->table[index];
 
 	while (n) {

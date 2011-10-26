@@ -61,9 +61,21 @@ struct hash_node *hash_find(const struct hash *h, const void *key);
 /* Insert a new item into a hash table. Returns 0 on success or -1 if
  * memory couldn't be allocated. If a node already exists with the given
  * key, it can be optionally returned via the "old" argument.
+ *
+ * Some flags can be specified to speed up the operation if additional
+ * information is known:
+ *
+ *     HASH_INSERT_PREHASHED: the code field is already computed
+ *     HASH_INSERT_UNIQUE: the key is known to be unique
+ *
+ * Note that if HASH_INSERT_UNIQUE is specified, the old argument is not
+ * used. If both flags are specified, then the key field is not required.
  */
+#define HASH_INSERT_PREHASHED		0x01
+#define HASH_INSERT_UNIQUE		0x02
+
 int hash_insert(struct hash *h, const void *key, struct hash_node *n,
-		struct hash_node **old);
+		struct hash_node **old, int flags);
 
 /* Remove an item from a hash table. This function never fails. */
 void hash_remove(struct hash *h, struct hash_node *n);
