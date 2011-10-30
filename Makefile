@@ -23,7 +23,8 @@ TESTS = \
     tests/slab.test \
     tests/hash.test \
     tests/strbuf.test \
-    tests/istr.test
+    tests/istr.test \
+    tests/bint.test
 CFLAGS = -O1 -Wall -ggdb -I.
 CC = gcc
 
@@ -69,6 +70,9 @@ tests/strbuf.test: tests/test_strbuf.o strbuf.o
 	$(CC) -o $@ $^
 
 tests/istr.test: tests/test_istr.o istr.o strbuf.o hash.o slab.o list.o
+	$(CC) -o $@ $^
+
+tests/bint.test: tests/test_bint.o bint.o
 	$(CC) -o $@ $^
 
 %.o: %.c
