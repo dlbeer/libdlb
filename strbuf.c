@@ -112,7 +112,7 @@ int strbuf_add_string(struct strbuf *buf, const char *text, int length)
 	return length;
 }
 
-int strbuf_printf(struct strbuf *buf, const char *fmt, ...)
+int strbuf_vprintf(struct strbuf *buf, const char *fmt, va_list ap)
 {
 	if (strbuf_capacity_hint(buf, 1) < 0)
 		return -1;
@@ -120,11 +120,8 @@ int strbuf_printf(struct strbuf *buf, const char *fmt, ...)
 	for (;;) {
 		int room = buf->capacity - buf->length;
 		int r;
-		va_list ap;
 
-		va_start(ap, fmt);
 		r = vsnprintf(buf->text + buf->length, room, fmt, ap);
-		va_end(ap);
 
 		if (r + 1 < room) {
 			buf->length += r;
@@ -138,4 +135,16 @@ int strbuf_printf(struct strbuf *buf, const char *fmt, ...)
 	}
 
 	return 0;
+}
+
+int strbuf_printf(struct strbuf *buf, const char *fmt, ...)
+{
+	va_list ap;
+	int r;
+
+	va_start(ap, fmt);
+	r = strbuf_vprintf(buf, fmt, ap);
+	va_end(ap);
+
+	return r;
 }

@@ -17,6 +17,8 @@
 #ifndef STRBUF_H_
 #define STRBUF_H_
 
+#include <stdarg.h>
+
 /* This structure is a resizable text buffer. It allows easy construction
  * and editing of dynamically sized strings. Strings kept in the buffer,
  * are always nul terminated (including those of zero length).
@@ -83,5 +85,7 @@ int strbuf_add_string(struct strbuf *buf, const char *text, int length);
  */
 int strbuf_printf(struct strbuf *buf, const char *fmt, ...)
 	__attribute__ ((format (printf, 2, 3)));
+
+int strbuf_vprintf(struct strbuf *buf, const char *fmt, va_list ap);
 
 #endif
