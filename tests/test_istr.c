@@ -34,10 +34,6 @@ static void test_equality(void)
 	printf("a = \"%s\", b = \"%s\", c = \"%s\"\n",
 	       istr_text(a), istr_text(b), istr_text(c));
 
-	assert(!istr_eq(a, b));
-	assert(!istr_eq(b, c));
-	assert(istr_eq(a, c));
-
 	assert(!istr_equal(a, b));
 	assert(!istr_equal(b, c));
 	assert(istr_equal(a, c));
@@ -49,20 +45,6 @@ static void test_equality(void)
 	istr_unref(a);
 	istr_unref(b);
 	istr_unref(c);
-}
-
-static void test_reuse(void)
-{
-	istr_t a;
-	istr_t b;
-
-	a = istr_pool_alloc(&pool, "hello world", -1);
-	istr_unref(a);
-
-	b = istr_pool_alloc(&pool, "hello world", -1);
-	istr_unref(b);
-
-	assert(a == b);
 }
 
 static void add_junk(void)
@@ -88,7 +70,6 @@ static void remove_junk(void)
 static void test_gc(void)
 {
 	istr_t a;
-	istr_t b;
 	int old_offset;
 
 	add_junk();
@@ -100,11 +81,7 @@ static void test_gc(void)
 	assert(!strcmp(istr_text(a), "test"));
 	assert(a->offset < old_offset);
 
-	b = istr_pool_alloc(&pool, "test", -1);
-	assert(istr_eq(a, b));
-
 	istr_unref(a);
-	istr_unref(b);
 }
 
 int main(void)
@@ -112,14 +89,14 @@ int main(void)
 	istr_pool_init(&pool);
 
 	test_equality();
-	test_reuse();
 	test_gc();
 
 	add_junk();
 	remove_junk();
 
 	istr_pool_gc(&pool);
-	assert(!pool.index.count);
+	assert(!pool.desc_count);
+	assert(!pool.all);
 	assert(!pool.text.length);
 	assert(LIST_EMPTY(&pool.descs.full));
 	assert(LIST_EMPTY(&pool.descs.partial));

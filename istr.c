@@ -17,38 +17,9 @@
 #include <string.h>
 #include "istr.h"
 
-struct index_key {
-	const char	*text;
-	unsigned int	length;
-};
-
-static hash_code_t key_hash(const void *k)
-{
-	const struct index_key *ik = (const struct index_key *)k;
-	hash_code_t code = 0;
-	int i;
-
-	for (i = 0; i < ik->length; i++)
-		code = code * 33 + ik->text[i];
-
-	return code;
-}
-
-static int key_compare(const void *k, const struct hash_node *n)
-{
-	const struct index_key *ik = (const struct index_key *)k;
-	const struct istr_desc *d = (const struct istr_desc *)n;
-
-	if (ik->length != d->length)
-		return 1;
-
-	return memcmp(d->owner->text.text + d->offset, ik->text, ik->length);
-}
-
 void istr_pool_init(struct istr_pool *p)
 {
 	strbuf_init(&p->text);
-	hash_init(&p->index, key_hash, key_compare);
 	slab_init(&p->descs, sizeof(struct istr_desc));
 
 	p->gc_threshold = 128;
@@ -57,37 +28,26 @@ void istr_pool_init(struct istr_pool *p)
 void istr_pool_destroy(struct istr_pool *p)
 {
 	strbuf_destroy(&p->text);
-	hash_destroy(&p->index);
 	slab_free_all(&p->descs);
 }
 
 istr_t istr_pool_alloc(struct istr_pool *p, const char *text, int length)
 {
-	struct index_key ik;
-	struct hash_node *n;
 	struct istr_desc *d;
 
 	if (length < 0)
 		length = strlen(text);
 
-	if (p->index.count >= p->gc_threshold) {
+	/* Give the garbage collector a chance to run */
+	if (p->desc_count >= p->gc_threshold) {
 		istr_pool_gc(p);
-		p->gc_threshold = p->index.count * 4;
+
+		p->gc_threshold = p->desc_count * 4;
 		if (p->gc_threshold < 128)
 			p->gc_threshold = 128;
 	}
 
-	ik.text = text;
-	ik.length = length;
-	n = hash_find(&p->index, &ik);
-
-	if (n) {
-		d = (struct istr_desc *)n;
-
-		d->refcnt++;
-		return d;
-	}
-
+	/* Allocate a descriptor */
 	d = slab_alloc(&p->descs);
 	if (!d)
 		return NULL;
@@ -97,62 +57,58 @@ istr_t istr_pool_alloc(struct istr_pool *p, const char *text, int length)
 	d->length = length;
 	d->refcnt = 1;
 
+	/* Allocate string data */
 	if (strbuf_add_string(&p->text, text, length) < 0 ||
 	    strbuf_add_char(&p->text, 0) < 0) {
 		slab_free(&p->descs, d);
 		return NULL;
 	}
 
-	if (hash_insert(&p->index, &ik, &d->node,
-			NULL, HASH_INSERT_UNIQUE) < 0) {
-		slab_free(&p->descs, d);
-		return NULL;
-	}
+	/* Add the descriptor to the list */
+	d->next = p->all;
+	p->all = d;
 
 	return d;
 }
 
-static int gc_index(struct istr_pool *p)
+static void gc_desc(struct istr_pool *p)
 {
-	struct hash new_index;
-	int i;
+	struct istr_desc *new_list = NULL;
 
-	hash_init(&new_index, key_hash, key_compare);
+	/* Filter the descriptor list, throwing away those with no
+	 * references.
+	 */
+	while (p->all) {
+		struct istr_desc *d = p->all;
 
-	if (hash_capacity_hint(&new_index, p->index.count) < 0) {
-		hash_destroy(&new_index);
-		return -1;
-	}
+		p->all = d->next;
 
-	for (i = 0; i < p->index.size; i++) {
-		struct hash_node *n = p->index.table[i];
-
-		while (n) {
-			struct hash_node *next = n->next;
-			struct istr_desc *d = (struct istr_desc *)n;
-
-			if (d->refcnt)
-				hash_insert(&new_index, NULL, n, NULL,
-					    HASH_INSERT_PREHASHED |
-					    HASH_INSERT_UNIQUE);
-			else
-				slab_free(&p->descs, d);
-
-			n = next;
+		if (d->refcnt) {
+			d->next = new_list;
+			new_list = d;
+		} else {
+			slab_free(&p->descs, d);
 		}
 	}
 
-	hash_capacity_hint(&new_index, new_index.count);
-	hash_destroy(&p->index);
-	memcpy(&p->index, &new_index, sizeof(p->index));
+	/* Reverse and count the filtered list */
+	p->desc_count = 0;
+	while (new_list) {
+		struct istr_desc *d = new_list;
 
-	return 0;
+		new_list = d->next;
+
+		d->next = p->all;
+		p->all = d;
+
+		p->desc_count++;
+	}
 }
 
 static int gc_text(struct istr_pool *p)
 {
+	struct istr_desc *d;
 	struct strbuf new_buf;
-	int i;
 
 	strbuf_init(&new_buf);
 
@@ -161,17 +117,12 @@ static int gc_text(struct istr_pool *p)
 		return -1;
 	}
 
-	for (i = 0; i < p->index.size; i++) {
-		struct hash_node *n;
+	for (d = p->all; d; d = d->next) {
+		int new_offset = new_buf.length;
 
-		for (n = p->index.table[i]; n; n = n->next) {
-			struct istr_desc *d = (struct istr_desc *)n;
-			int new_offset = new_buf.length;
-
-			strbuf_add_string(&new_buf, istr_text(d),
-					  d->length + 1);
-			d->offset = new_offset;
-		}
+		strbuf_add_string(&new_buf, istr_text(d),
+				  d->length + 1);
+		d->offset = new_offset;
 	}
 
 	strbuf_capacity_hint(&new_buf, new_buf.length);
@@ -183,17 +134,13 @@ static int gc_text(struct istr_pool *p)
 
 int istr_pool_gc(struct istr_pool *p)
 {
-	if (gc_index(p) < 0 || gc_text(p) < 0)
-		return -1;
+	gc_desc(p);
 
-	return 0;
+	return gc_text(p);
 }
 
 int istr_equal(istr_t a, istr_t b)
 {
-	if (a->owner == b->owner)
-		return istr_eq(a, b);
-
 	if (a->length != b->length)
 		return 0;
 

@@ -17,24 +17,24 @@
 #ifndef ISTR_H_
 #define ISTR_H_
 
-#include "hash.h"
 #include "strbuf.h"
 #include "slab.h"
 
 /* This structure is an immutable reference-counted string pool. It allows
- * for reduced memory usage and fast comparison when dealing with large
- * numbers of strings.
+ * for reduced memory usage when dealing with large numbers of strings.
  */
 struct istr_pool {
 	struct strbuf		text;
-	struct hash		index;
 	struct slab		descs;
 
+	struct istr_desc	*all;
+
+	unsigned int		desc_count;
 	unsigned int		gc_threshold;
 };
 
 struct istr_desc {
-	struct hash_node	node;
+	struct istr_desc	*next;
 	struct istr_pool	*owner;
 	unsigned int		offset;
 	unsigned int		length;
@@ -77,26 +77,17 @@ static inline void istr_unref(istr_t s)
 	((struct istr_desc *)s)->refcnt--;
 }
 
+/* Compare two strings for equality. This can be more efficient than
+ * istr_compare, because it first tests for length equality.
+ */
+int istr_equal(istr_t a, istr_t b);
+
 /* Compare two strings, returning negative/zero/positive. */
 int istr_compare(istr_t a, istr_t b);
-
-/* Fast comparison function. If two strings are known to be from the same
- * pool, you can test for equality using istr_eq(). Otherwise, istr_equal()
- * can be used.
- */
-static inline int istr_eq(istr_t a, istr_t b)
-{
-	return a == b;
-}
-
-int istr_equal(istr_t a, istr_t b);
 
 /* Obtain length and text from an immutable string reference. Note that the
  * text pointer returned is valid only up to the next pool allocation or
  * garbage collection.
- *
- * The reference count can also be queried. This may be useful for using a
- * string pool to count word frequencies.
  */
 static inline const char *istr_text(istr_t s)
 {
@@ -106,11 +97,6 @@ static inline const char *istr_text(istr_t s)
 static inline unsigned int istr_length(istr_t s)
 {
 	return s->length;
-}
-
-static inline unsigned int istr_refcnt(istr_t s)
-{
-	return s->refcnt;
 }
 
 #endif
