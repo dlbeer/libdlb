@@ -22,6 +22,8 @@ void istr_pool_init(struct istr_pool *p)
 	strbuf_init(&p->text);
 	slab_init(&p->descs, sizeof(struct istr_desc));
 
+	p->all = NULL;
+	p->desc_count = 0;
 	p->gc_threshold = 128;
 }
 
@@ -65,6 +67,7 @@ istr_t istr_pool_alloc(struct istr_pool *p, const char *text, int length)
 	}
 
 	/* Add the descriptor to the list */
+	p->desc_count++;
 	d->next = p->all;
 	p->all = d;
 
