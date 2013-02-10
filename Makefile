@@ -25,7 +25,7 @@ TESTS = \
     tests/strbuf.test \
     tests/istr.test \
     tests/bint.test
-CFLAGS = -O1 -Wall -ggdb -I.
+CFLAGS = -O1 -Wall -ggdb -Isrc
 CC = gcc
 
 all: $(TESTS)
@@ -38,41 +38,41 @@ test: $(TESTS)
 	done
 
 clean:
-	rm -f *.o
-	rm -f tests/*.o
+	rm -f */*.o
 	rm -f tests/*.test
 
 tests/containers.test: tests/test_containers.o
 	$(CC) -o $@ $^
 
-tests/list.test: tests/test_list.o list.o
+tests/list.test: tests/test_list.o src/list.o
 	$(CC) -o $@ $^
 
-tests/vector.test: tests/test_vector.o vector.o
+tests/vector.test: tests/test_vector.o src/vector.o
 	$(CC) -o $@ $^
 
-tests/rbt.test: tests/test_rbt.o rbt.o
+tests/rbt.test: tests/test_rbt.o src/rbt.o
 	$(CC) -o $@ $^
 
-tests/rbt_iter.test: tests/test_rbt_iter.o rbt.o rbt_iter.o
+tests/rbt_iter.test: tests/test_rbt_iter.o src/rbt.o src/rbt_iter.o
 	$(CC) -o $@ $^
 
-tests/rbt_range.test: tests/test_rbt_range.o rbt.o rbt_range.o
+tests/rbt_range.test: tests/test_rbt_range.o src/rbt.o src/rbt_range.o
 	$(CC) -o $@ $^
 
-tests/slab.test: tests/test_slab.o slab.o list.o
+tests/slab.test: tests/test_slab.o src/slab.o src/list.o
 	$(CC) -o $@ $^
 
-tests/hash.test: tests/test_hash.o hash.o
+tests/hash.test: tests/test_hash.o src/hash.o
 	$(CC) -o $@ $^
 
-tests/strbuf.test: tests/test_strbuf.o strbuf.o
+tests/strbuf.test: tests/test_strbuf.o src/strbuf.o
 	$(CC) -o $@ $^
 
-tests/istr.test: tests/test_istr.o istr.o strbuf.o hash.o slab.o list.o
+tests/istr.test: tests/test_istr.o src/istr.o src/strbuf.o src/hash.o \
+		 src/slab.o src/list.o
 	$(CC) -o $@ $^
 
-tests/bint.test: tests/test_bint.o bint.o
+tests/bint.test: tests/test_bint.o src/bint.o
 	$(CC) -o $@ $^
 
 %.o: %.c
