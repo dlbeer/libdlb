@@ -27,7 +27,8 @@ TESTS = \
     tests/bint.test \
     tests/slist.test \
     tests/cbuf.test \
-    tests/io/syserr.test
+    tests/io/syserr.test \
+    tests/io/clock.test
 CFLAGS = -O1 -Wall -ggdb -Isrc
 CC = gcc
 
@@ -88,6 +89,9 @@ tests/cbuf.test: tests/test_cbuf.o src/cbuf.o
 
 tests/io/syserr.test: tests/io/test_syserr.o
 	$(CC) -o $@ $^
+
+tests/io/clock.test: tests/io/test_clock.o src/io/clock.o
+	$(CC) -o $@ $^ -lrt
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $*.o -c $*.c
