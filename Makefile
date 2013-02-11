@@ -24,7 +24,8 @@ TESTS = \
     tests/hash.test \
     tests/strbuf.test \
     tests/istr.test \
-    tests/bint.test
+    tests/bint.test \
+    tests/slist.test
 CFLAGS = -O1 -Wall -ggdb -Isrc
 CC = gcc
 
@@ -73,6 +74,9 @@ tests/istr.test: tests/test_istr.o src/istr.o src/strbuf.o src/hash.o \
 	$(CC) -o $@ $^
 
 tests/bint.test: tests/test_bint.o src/bint.o
+	$(CC) -o $@ $^
+
+tests/slist.test: tests/test_slist.o src/slist.o
 	$(CC) -o $@ $^
 
 %.o: %.c
