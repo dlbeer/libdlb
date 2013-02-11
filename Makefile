@@ -26,7 +26,8 @@ TESTS = \
     tests/istr.test \
     tests/bint.test \
     tests/slist.test \
-    tests/cbuf.test
+    tests/cbuf.test \
+    tests/io/syserr.test
 CFLAGS = -O1 -Wall -ggdb -Isrc
 CC = gcc
 
@@ -42,6 +43,8 @@ test: $(TESTS)
 clean:
 	rm -f */*.o
 	rm -f tests/*.test
+	rm -f */*/*.o
+	rm -f tests/*/*.test
 
 tests/containers.test: tests/test_containers.o
 	$(CC) -o $@ $^
@@ -81,6 +84,9 @@ tests/slist.test: tests/test_slist.o src/slist.o
 	$(CC) -o $@ $^
 
 tests/cbuf.test: tests/test_cbuf.o src/cbuf.o
+	$(CC) -o $@ $^
+
+tests/io/syserr.test: tests/io/test_syserr.o
 	$(CC) -o $@ $^
 
 %.o: %.c
