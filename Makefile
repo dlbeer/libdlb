@@ -30,7 +30,8 @@ TESTS = \
     tests/io/syserr.test \
     tests/io/clock.test \
     tests/io/thr.test \
-    tests/io/runq.test
+    tests/io/runq.test \
+    tests/io/waitq.test
 CFLAGS = -O1 -Wall -ggdb -Isrc
 CC = gcc
 
@@ -100,6 +101,11 @@ tests/io/thr.test: tests/io/test_thr.o src/io/thr.o src/io/clock.o
 
 tests/io/runq.test: tests/io/test_runq.o src/io/runq.o src/io/thr.o \
 		    src/slist.o src/io/clock.o
+	$(CC) -o $@ $^ -lpthread -lrt
+
+tests/io/waitq.test: tests/io/test_waitq.o src/io/waitq.o src/io/runq.o \
+		     src/io/thr.o src/io/clock.o src/slist.o src/rbt.o \
+		     src/rbt_iter.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
 %.o: %.c
