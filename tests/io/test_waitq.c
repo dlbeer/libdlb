@@ -31,7 +31,7 @@ static void test_timeout(struct waitq_timer *t)
 	int n = t - test_timers;
 
 	printf("  -- expired %d%s\n", n,
-	       waitq_cancelled(t) ? " (cancelled)" : "");
+	       waitq_timer_cancelled(t) ? " (cancelled)" : "");
 	counter++;
 }
 
@@ -42,19 +42,21 @@ int main(void)
 	int i;
 
 	runq_init(&runq, 0);
-	waitq_init(&waitq);
+	waitq_init(&waitq, &runq);
 
 	/* Schedule some timers */
-	for (i = 0; i < N_TIMERS; i++)
-		waitq_wait(&waitq, &test_timers[i], i * 50 + 50,
-			   test_timeout);
+	for (i = 0; i < N_TIMERS; i++) {
+		waitq_timer_init(&test_timers[i], &waitq);
+		waitq_timer_wait(&test_timers[i], i * 50 + 50,
+				 test_timeout);
+	}
 
-	waitq_cancel(&waitq, &test_timers[5]);
+	waitq_timer_cancel(&test_timers[5]);
 
 	/* Keep running until they all expire */
 	while (counter < N_TIMERS) {
 		clock_wait(waitq_next_deadline(&waitq));
-		waitq_dispatch(&waitq, &runq, 0);
+		waitq_dispatch(&waitq, 0);
 		runq_dispatch(&runq, 0);
 	}
 

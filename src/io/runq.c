@@ -159,8 +159,9 @@ unsigned int runq_dispatch(struct runq *r, unsigned int limit)
 	return count;
 }
 
-void runq_exec(struct runq *r, struct runq_task *t, runq_task_func_t func)
+void runq_task_exec(struct runq_task *t, runq_task_func_t func)
 {
+	struct runq *r = t->owner;
 	int was_empty;
 
 	t->func = func;

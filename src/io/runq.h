@@ -70,7 +70,14 @@ typedef void (*runq_task_func_t)(struct runq_task *t);
 struct runq_task {
 	struct slist_node	job_list;
 	runq_task_func_t	func;
+	struct runq		*owner;
 };
+
+/* Initialize a task by associating it with a run-queue. */
+static inline void runq_task_init(struct runq_task *t, struct runq *q)
+{
+	t->owner = q;
+}
 
 /* Submit a job to the run-queue. The specified function will be
  * executed at some later date. Until that occurs, you must not modify
@@ -83,6 +90,6 @@ struct runq_task {
  * You may not re-use a runq_task structure which is still pending
  * execution.
  */
-void runq_exec(struct runq *r, struct runq_task *t, runq_task_func_t func);
+void runq_task_exec(struct runq_task *t, runq_task_func_t func);
 
 #endif

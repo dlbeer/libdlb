@@ -31,6 +31,7 @@ typedef void (*waitq_wakeup_t)(struct waitq *q);
 /* Wait queue data structure */
 struct waitq {
 	waitq_wakeup_t	wakeup;
+	struct runq	*run;
 
 	thr_mutex_t	lock;
 	struct rbt	waiting_set;
@@ -38,8 +39,11 @@ struct waitq {
 
 /* Initialize/destroy a wait queue. Destroying a wait queue does not
  * cause any timers to expire.
+ *
+ * A waitq needs to be linked to a runq. Timers become runnable tasks on
+ * expiry.
  */
-void waitq_init(struct waitq *wq);
+void waitq_init(struct waitq *wq, struct runq *rq);
 void waitq_destroy(struct waitq *wq);
 
 /* Find the time, in milliseconds, to the next timer expiry. Returns 0
@@ -49,10 +53,9 @@ void waitq_destroy(struct waitq *wq);
 int waitq_next_deadline(struct waitq *wq);
 
 /* For each timer which has expired, enqueue the completion handler in
- * the given run queue. A limit may be specified (0 means no limit).
+ * the linked run queue. A limit may be specified (0 means no limit).
  */
-unsigned int waitq_dispatch(struct waitq *wq, struct runq *rq,
-			    unsigned int limit);
+unsigned int waitq_dispatch(struct waitq *wq, unsigned int limit);
 
 /* Timer completion handler function. This is invoked after expiry or
  * cancellation of a timer.
@@ -70,7 +73,12 @@ struct waitq_timer {
 
 	struct rbt_node		waiting_set;
 	clock_ticks_t		deadline;
+
+	struct waitq		*owner;
 };
+
+/* Initialize a timer by associating it with a wait queue. */
+void waitq_timer_init(struct waitq_timer *t, struct waitq *q);
 
 /* Asynchronously wait for an interval. The given function will be
  * executed after the specified interval has elapsed.
@@ -79,13 +87,13 @@ struct waitq_timer {
  * until the callback function has been invoked. As soon as the callback
  * function starts executing, the timer is safe to modify/destroy.
  */
-void waitq_wait(struct waitq *wq, struct waitq_timer *t,
-		int interval_ms, waitq_timer_func_t func);
+void waitq_timer_wait(struct waitq_timer *t,
+		      int interval_ms, waitq_timer_func_t func);
 
 /* Determine whether the given timer expired due to cancellation. This
  * function is not safe to use on an unexpired timer.
  */
-static inline int waitq_cancelled(struct waitq_timer *t)
+static inline int waitq_timer_cancelled(struct waitq_timer *t)
 {
 	return !t->deadline;
 }
@@ -94,12 +102,11 @@ static inline int waitq_cancelled(struct waitq_timer *t)
  * function has no effect. If the timer has yet to expire, requesting
  * cancellation will hasten its expiry.
  */
-void waitq_cancel(struct waitq *wq, struct waitq_timer *t);
+void waitq_timer_cancel(struct waitq_timer *t);
 
 /* Attempt to reschedule a timer. If the timer has already expired, this
  * function has no effect. Otherwise, the timer's deadline is changed.
  */
-void waitq_reschedule(struct waitq *wq, struct waitq_timer *t,
-		      int interval_ms);
+void waitq_timer_reschedule(struct waitq_timer *t, int interval_ms);
 
 #endif

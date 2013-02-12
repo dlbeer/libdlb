@@ -70,8 +70,10 @@ static void test_tasks(unsigned int bg_threads)
 	i = runq_init(&queue, bg_threads);
 	assert(i >= 0);
 
-	for (i = 0; i < N_TASKS; i++)
-		runq_exec(&queue, &tests[i], task_func);
+	for (i = 0; i < N_TASKS; i++) {
+		runq_task_init(&tests[i], &queue);
+		runq_task_exec(&tests[i], task_func);
+	}
 
 	while (read_counter() != N_TASKS)
 		wait_counter(bg_threads);
@@ -82,7 +84,7 @@ static void test_tasks(unsigned int bg_threads)
 	assert(i == N_TASKS);
 
 	for (i = 0; i < N_TASKS; i++)
-		runq_exec(&queue, &tests[i], task_func);
+		runq_task_exec(&tests[i], task_func);
 
 	while (read_counter() != N_TASKS * 2)
 		wait_counter(bg_threads);

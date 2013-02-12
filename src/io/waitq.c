@@ -55,8 +55,9 @@ static struct waitq_timer *expire_one(struct waitq *wq, clock_ticks_t now)
 	return t;
 }
 
-void waitq_init(struct waitq *wq)
+void waitq_init(struct waitq *wq, struct runq *rq)
 {
+	wq->run = rq;
 	wq->wakeup = NULL;
 	thr_mutex_init(&wq->lock);
 	wq->waiting_set.root = NULL;
@@ -89,8 +90,7 @@ int waitq_next_deadline(struct waitq *wq)
 	return deadline - now;
 }
 
-unsigned int waitq_dispatch(struct waitq *wq, struct runq *rq,
-			    unsigned int limit)
+unsigned int waitq_dispatch(struct waitq *wq, unsigned int limit)
 {
 	unsigned int count = 0;
 	clock_ticks_t now = clock_now();
@@ -101,20 +101,23 @@ unsigned int waitq_dispatch(struct waitq *wq, struct runq *rq,
 		if (!t)
 			break;
 
-		runq_exec(rq, &t->task, t->task.func);
+		runq_task_exec(&t->task, t->task.func);
 		count++;
 	}
 
 	return count;
 }
 
-void waitq_wait(struct waitq *wq, struct waitq_timer *t,
-		int interval_ms, waitq_timer_func_t func)
+void waitq_timer_init(struct waitq_timer *t, struct waitq *q)
 {
-	int need_wakeup = 0;
+	runq_task_init(&t->task, q->run);
+	t->owner = q;
+}
 
-	t->task.func = (runq_task_func_t)func;
-	t->deadline = clock_now() + interval_ms;
+static void wset_add(struct waitq_timer *t)
+{
+	struct waitq *wq = t->owner;
+	int need_wakeup;
 
 	thr_mutex_lock(&wq->lock);
 	rbt_insert(&wq->waiting_set, t, &t->waiting_set);
@@ -125,44 +128,46 @@ void waitq_wait(struct waitq *wq, struct waitq_timer *t,
 		wq->wakeup(wq);
 }
 
-static void reschedule(struct waitq *wq, struct waitq_timer *t,
-		       clock_ticks_t deadline)
+static int wset_remove(struct waitq_timer *t)
 {
+	struct waitq *wq = t->owner;
 	struct rbt_node *n;
 	int need_wakeup = 0;
 
-	/* See if the timer is in the set. If so, de-queue it. */
 	thr_mutex_lock(&wq->lock);
 	n = rbt_find(&wq->waiting_set, t);
 	if (n) {
 		rbt_remove(&wq->waiting_set, n);
-		need_wakeup |= !rbt_iter_prev(n);
+		need_wakeup = !rbt_iter_prev(n);
 	}
-	thr_mutex_unlock(&wq->lock);
-
-	if (!n)
-		return;
-
-	/* Rewrite the deadline */
-	t->deadline = deadline;
-
-	/* Put it back in the set */
-	thr_mutex_lock(&wq->lock);
-	rbt_insert(&wq->waiting_set, t, &t->waiting_set);
-	need_wakeup |= !rbt_iter_prev(&t->waiting_set);
 	thr_mutex_unlock(&wq->lock);
 
 	if (need_wakeup && wq->wakeup)
 		wq->wakeup(wq);
+
+	return n != NULL;
 }
 
-void waitq_cancel(struct waitq *wq, struct waitq_timer *t)
+void waitq_timer_wait(struct waitq_timer *t,
+		      int interval_ms, waitq_timer_func_t func)
 {
-	reschedule(wq, t, 0);
+	t->task.func = (runq_task_func_t)func;
+	t->deadline = clock_now() + interval_ms;
+	wset_add(t);
 }
 
-void waitq_reschedule(struct waitq *wq, struct waitq_timer *t,
-		      int interval_ms)
+void waitq_timer_cancel(struct waitq_timer *t)
 {
-	reschedule(wq, t, clock_now() + interval_ms);
+	if (wset_remove(t)) {
+		t->deadline = 0;
+		runq_task_exec(&t->task, t->task.func);
+	}
+}
+
+void waitq_timer_reschedule(struct waitq_timer *t, int interval_ms)
+{
+	if (wset_remove(t)) {
+		t->deadline = clock_now() + interval_ms;
+		wset_add(t);
+	}
 }
