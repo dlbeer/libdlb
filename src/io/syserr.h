@@ -30,6 +30,11 @@ static inline syserr_t syserr_last(void)
 	return GetLastError();
 }
 
+static inline void syserr_set(syserr_t err)
+{
+	SetLastError(err);
+}
+
 static inline void syserr_format(syserr_t err, char *buf, size_t max_size)
 {
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 0,
@@ -43,6 +48,11 @@ typedef int syserr_t;
 static inline syserr_t syserr_last(void)
 {
 	return errno;
+}
+
+static inline void syserr_set(syserr_t err)
+{
+	errno = err;
 }
 
 static inline void syserr_format(syserr_t err, char *buf, size_t max_size)
