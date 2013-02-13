@@ -16,9 +16,9 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include "io/thr.h"
-#include "io/syserr.h"
-#include "io/clock.h"
+#include "thr.h"
+#include "syserr.h"
+#include "clock.h"
 
 static int counter;
 static thr_thread_t worker;

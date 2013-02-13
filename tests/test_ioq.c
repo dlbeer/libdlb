@@ -17,7 +17,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "io/ioq.h"
+#include "ioq.h"
 #include "containers.h"
 
 #define N		65536

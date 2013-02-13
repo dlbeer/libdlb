@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include "io/mailbox.h"
+#include "mailbox.h"
 #include "containers.h"
 
 #define N			10

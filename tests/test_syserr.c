@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include "io/syserr.h"
+#include "syserr.h"
 
 int main(void)
 {

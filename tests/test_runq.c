@@ -16,8 +16,8 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include "io/clock.h"
-#include "io/runq.h"
+#include "clock.h"
+#include "runq.h"
 
 #define N_TASKS		10
 

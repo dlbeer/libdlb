@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include "io/clock.h"
+#include "clock.h"
 
 int main(void)
 {

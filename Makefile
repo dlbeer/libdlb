@@ -27,14 +27,14 @@ TESTS = \
     tests/bint.test \
     tests/slist.test \
     tests/cbuf.test \
-    tests/io/syserr.test \
-    tests/io/clock.test \
-    tests/io/thr.test \
-    tests/io/runq.test \
-    tests/io/waitq.test \
-    tests/io/ioq.test \
-    tests/io/mailbox.test
-CFLAGS = -O1 -Wall -ggdb -Isrc
+    tests/syserr.test \
+    tests/clock.test \
+    tests/thr.test \
+    tests/runq.test \
+    tests/waitq.test \
+    tests/ioq.test \
+    tests/mailbox.test
+CFLAGS = -O1 -Wall -ggdb -Isrc -Iio
 CC = gcc
 
 all: $(TESTS)
@@ -49,8 +49,6 @@ test: $(TESTS)
 clean:
 	rm -f */*.o
 	rm -f tests/*.test
-	rm -f */*/*.o
-	rm -f tests/*/*.test
 
 tests/containers.test: tests/test_containers.o
 	$(CC) -o $@ $^
@@ -92,31 +90,31 @@ tests/slist.test: tests/test_slist.o src/slist.o
 tests/cbuf.test: tests/test_cbuf.o src/cbuf.o
 	$(CC) -o $@ $^
 
-tests/io/syserr.test: tests/io/test_syserr.o
+tests/syserr.test: tests/test_syserr.o
 	$(CC) -o $@ $^
 
-tests/io/clock.test: tests/io/test_clock.o src/io/clock.o
+tests/clock.test: tests/test_clock.o io/clock.o
 	$(CC) -o $@ $^ -lrt
 
-tests/io/thr.test: tests/io/test_thr.o src/io/thr.o src/io/clock.o
+tests/thr.test: tests/test_thr.o io/thr.o io/clock.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/io/runq.test: tests/io/test_runq.o src/io/runq.o src/io/thr.o \
-		    src/slist.o src/io/clock.o
+tests/runq.test: tests/test_runq.o io/runq.o io/thr.o \
+		    src/slist.o io/clock.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/io/waitq.test: tests/io/test_waitq.o src/io/waitq.o src/io/runq.o \
-		     src/io/thr.o src/io/clock.o src/slist.o src/rbt.o \
-		     src/rbt_iter.o
+tests/waitq.test: tests/test_waitq.o io/waitq.o io/runq.o \
+		  io/thr.o io/clock.o src/slist.o src/rbt.o \
+		  src/rbt_iter.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/io/ioq.test: tests/io/test_ioq.o src/io/ioq.o src/io/waitq.o \
-		   src/io/runq.o src/io/thr.o src/io/clock.o src/slist.o \
-		   src/rbt.o src/rbt_iter.o
+tests/ioq.test: tests/test_ioq.o io/ioq.o io/waitq.o \
+		io/runq.o io/thr.o io/clock.o src/slist.o \
+		src/rbt.o src/rbt_iter.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/io/mailbox.test: tests/io/test_mailbox.o src/io/mailbox.o src/io/runq.o \
-		       src/io/thr.o src/slist.o
+tests/mailbox.test: tests/test_mailbox.o io/mailbox.o io/runq.o \
+		    io/thr.o src/slist.o
 	$(CC) -o $@ $^ -lpthread
 
 %.o: %.c

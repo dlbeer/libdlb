@@ -16,8 +16,8 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include "io/waitq.h"
-#include "io/clock.h"
+#include "waitq.h"
+#include "clock.h"
 
 #define N_TIMERS	10
 
