@@ -169,7 +169,7 @@ void ioq_fd_wait(struct ioq_fd *f, ioq_fd_mask_t set, ioq_fd_func_t func);
 void ioq_fd_rewait(struct ioq_fd *f, ioq_fd_mask_t set);
 
 /* Attempt to cancel an IO wait operation. */
-static inline void ioq_fd_cancel(struct ioq_fd *f, ioq_fd_mask_t set)
+static inline void ioq_fd_cancel(struct ioq_fd *f)
 {
 	ioq_fd_rewait(f, 0);
 }
