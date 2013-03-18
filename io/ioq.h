@@ -62,6 +62,11 @@ void ioq_destroy(struct ioq *q);
  */
 int ioq_iterate(struct ioq *q);
 
+/* Interrupt an IO queue waiter. This causes ioq_iterate() to return 0
+ * if it's currently being called.
+ */
+void ioq_notify(struct ioq *q);
+
 /* Obtain a pointer to the IO queue's integrated run queue */
 static inline struct runq *ioq_runq(struct ioq *q)
 {

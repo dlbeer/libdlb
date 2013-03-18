@@ -19,7 +19,7 @@
 #include "ioq.h"
 #include "containers.h"
 
-static void intr_notify(struct ioq *q)
+void ioq_notify(struct ioq *q)
 {
 	int old_state;
 
@@ -45,12 +45,12 @@ static void intr_ack(struct ioq *q)
 
 static void wakeup_runq(struct runq *q)
 {
-	intr_notify(container_of(q, struct ioq, run));
+	ioq_notify(container_of(q, struct ioq, run));
 }
 
 static void wakeup_waitq(struct waitq *q)
 {
-	intr_notify(container_of(q, struct ioq, wait));
+	ioq_notify(container_of(q, struct ioq, wait));
 }
 
 int ioq_init(struct ioq *q, unsigned int bg_threads)
@@ -286,7 +286,7 @@ void ioq_fd_wait(struct ioq_fd *f, ioq_fd_mask_t set, ioq_fd_func_t func)
 	thr_mutex_unlock(&q->lock);
 
 	if (need_wakeup)
-		intr_notify(q);
+		ioq_notify(q);
 }
 
 void ioq_fd_rewait(struct ioq_fd *f, ioq_fd_mask_t set)
@@ -302,5 +302,5 @@ void ioq_fd_rewait(struct ioq_fd *f, ioq_fd_mask_t set)
 	thr_mutex_unlock(&q->lock);
 
 	if (need_wakeup)
-		intr_notify(q);
+		ioq_notify(q);
 }
