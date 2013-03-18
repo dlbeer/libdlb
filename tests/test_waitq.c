@@ -64,7 +64,7 @@ int main(void)
 	waitq_destroy(&waitq);
 	runq_destroy(&runq);
 
-	printf("Running time: %lld\n", after - before);
+	printf("Running time: %" CLOCK_PRI_TICKS "\n", after - before);
 	assert(after >= before + 400);
 	assert(after <= before + 600);
 	return 0;

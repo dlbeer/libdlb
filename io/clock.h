@@ -17,12 +17,14 @@
 #ifndef IO_CLOCK_H_
 #define IO_CLOCK_H_
 
-#include <stdint.h>
+#include <inttypes.h>
 
 /* Current time, in milliseconds, relative to some arbitrary starting
  * point. This clock is monotonic, but not tied to any wall clock.
  */
 typedef uint64_t clock_ticks_t;
+
+#define CLOCK_PRI_TICKS PRIu64
 
 /* Obtain the latest time. This function is thread-safe. */
 clock_ticks_t clock_now(void);

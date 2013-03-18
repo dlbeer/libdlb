@@ -23,10 +23,10 @@ int main(void)
 	clock_ticks_t before, after;
 
 	before = clock_now();
-	printf("Current time: %lld\n", before);
+	printf("Current time: %" CLOCK_PRI_TICKS "\n", before);
 	clock_wait(500);
 	after = clock_now();
-	printf("After 500 ms: %lld\n", after);
+	printf("After 500 ms: %" CLOCK_PRI_TICKS "\n", after);
 
 	assert((after >= before + 450) && (after <= before + 550));
 

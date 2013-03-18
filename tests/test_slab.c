@@ -61,7 +61,7 @@ int main(void)
 {
 	slab_init(&slb, sizeof(struct item));
 
-	printf("objsize     = %d (original %d)\n",
+	printf("objsize     = %d (original %ld)\n",
 		slb.objsize, sizeof(struct item));
 	printf("count       = %d\n", slb.count);
 	printf("info_offset = %d\n", slb.info_offset);

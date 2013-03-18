@@ -60,11 +60,11 @@ static void test_timedwait(void)
 	printf("With event clear...\n");
 
 	before = clock_now();
-	printf("  current time: %lld\n", before);
+	printf("  current time: %" CLOCK_PRI_TICKS "\n", before);
 	r = thr_event_wait_timeout(&event, 500);
 	assert(r);
 	after = clock_now();
-	printf("  after 500 ms wait: %lld\n", after);
+	printf("  after 500 ms wait: %" CLOCK_PRI_TICKS "\n", after);
 
 	assert((after >= before + 450) && (after <= before + 550));
 
@@ -72,11 +72,11 @@ static void test_timedwait(void)
 	printf("With event set...\n");
 
 	before = clock_now();
-	printf("  current time: %lld\n", before);
+	printf("  current time: %" CLOCK_PRI_TICKS "\n", before);
 	r = thr_event_wait_timeout(&event, 500);
 	assert(!r);
 	after = clock_now();
-	printf("  after 500 ms wait: %lld\n", after);
+	printf("  after 500 ms wait: %" CLOCK_PRI_TICKS "\n", after);
 
 	assert(after <= before + 50);
 }
