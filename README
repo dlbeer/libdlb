@@ -1,0 +1,42 @@
+libdlb: data structures and utilities library
+Copyright (C) 2013 Daniel Beer <dlbeer@gmail.com>
+
+This package is a library of (primarily intrusive) data structures and
+asynchronous IO facilities for C programs. The subdirectories in this
+directory are:
+
+  * src: intrusive data structures, including:
+    - bint: arbitrary precision integers
+    - cbuf: circular byte-buffers
+    - containers: utility macros for intrusive data structures
+    - hash: partially intrusive hash table
+    - istr: memory-efficient immutable string pool
+    - list: intrusive doubly-linked circular list
+    - rbt: intrusive red-black tree
+    - rbt_iter: functions for iterating over red-black trees
+    - rbt_range: functions for efficiently computing aggregates over
+      augmented red-black trees.
+    - slab: pooled object allocator
+    - slist: intrusive singly-linked list
+    - strbuf: resizable string-buffer
+    - vector: resizable array
+
+  * io: asynchronous IO and system utilities:
+    - clock: portable interface to a monotonic millisecond clock
+    - ioq: asynchronous IO queue
+    - mailbox: asynchronous IPC primitive
+    - runq: thread pool
+    - syserr: portable interface to system error codes
+    - thr: portable interface to threading primitives
+    - waitq: asynchronous timer schedule
+
+  * tests: automated test suite
+
+To build the tests, type "make". Nothing is required except the standard
+C library and GCC. Type "make test" to run each test.
+
+All the files in this package are covered by the license in the file
+"LICENSE". If you want to use them in your own programs, just include
+the files you need in your source package -- there's no need to build a
+shared library, and you likely don't need every file (dependencies
+between files exist, but are easily identified).
