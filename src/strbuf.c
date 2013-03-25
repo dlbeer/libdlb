@@ -118,10 +118,13 @@ int strbuf_vprintf(struct strbuf *buf, const char *fmt, va_list ap)
 		return -1;
 
 	for (;;) {
+		va_list map;
 		int room = buf->capacity - buf->length;
 		int r;
 
-		r = vsnprintf(buf->text + buf->length, room, fmt, ap);
+		va_copy(map, ap);
+		r = vsnprintf(buf->text + buf->length, room, fmt, map);
+		va_end(map);
 
 		if (r + 1 < room) {
 			buf->length += r;
