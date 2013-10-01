@@ -202,7 +202,6 @@ static void dispatch_mods(struct ioq *q)
 
 		if (!(flags & IOQ_FLAG_WAITING)) {
 			runq_task_exec(&f->task, f->task.func);
-			continue;
 		} else if (!requested) {
 			if (flags & IOQ_FLAG_EPOLL)
 				epoll_ctl(q->epoll_fd, EPOLL_CTL_DEL,

@@ -87,6 +87,7 @@ typedef uint32_t ioq_fd_mask_t;
 #define IOQ_EVENT_IN		EPOLLIN
 #define IOQ_EVENT_OUT		EPOLLOUT
 #define IOQ_EVENT_ERR		EPOLLERR
+#define IOQ_EVENT_HUP		EPOLLHUP
 
 /* Wait object for use with an IO queue. Each one of these objects is
  * associated with a single file descriptor and may have one outstanding
