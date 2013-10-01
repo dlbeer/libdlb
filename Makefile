@@ -33,7 +33,8 @@ TESTS = \
     tests/runq.test \
     tests/waitq.test \
     tests/ioq.test \
-    tests/mailbox.test
+    tests/mailbox.test \
+    tests/afile.test
 CFLAGS = -O1 -Wall -ggdb -Isrc -Iio
 CC = gcc
 
@@ -111,6 +112,11 @@ tests/waitq.test: tests/test_waitq.o io/waitq.o io/runq.o \
 tests/ioq.test: tests/test_ioq.o io/ioq.o io/waitq.o \
 		io/runq.o io/thr.o io/clock.o src/slist.o \
 		src/rbt.o src/rbt_iter.o
+	$(CC) -o $@ $^ -lpthread -lrt
+
+tests/afile.test: tests/test_afile.o io/ioq.o io/waitq.o \
+		  io/runq.o io/thr.o io/clock.o src/slist.o \
+		  src/rbt.o src/rbt_iter.o io/afile.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
 tests/mailbox.test: tests/test_mailbox.o io/mailbox.o io/runq.o \

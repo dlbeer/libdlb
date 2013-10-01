@@ -22,6 +22,7 @@ directory are:
     - vector: resizable array
 
   * io: asynchronous IO and system utilities:
+    - afile: asynchronous file reading/writing
     - clock: portable interface to a monotonic millisecond clock
     - handle: portable file handle abstraction
     - ioq: asynchronous IO queue
