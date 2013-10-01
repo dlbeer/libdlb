@@ -23,6 +23,7 @@ directory are:
 
   * io: asynchronous IO and system utilities:
     - clock: portable interface to a monotonic millisecond clock
+    - handle: portable file handle abstraction
     - ioq: asynchronous IO queue
     - mailbox: asynchronous IPC primitive
     - runq: thread pool
