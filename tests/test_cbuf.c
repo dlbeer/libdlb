@@ -14,9 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include "prng.h"
 #include "cbuf.h"
 
 #define N		65536
@@ -31,12 +31,14 @@ static uint8_t data_b[4096];
 static struct cbuf buf_a;
 static struct cbuf buf_b;
 
+static prng_t prng;
+
 static void init_pattern(void)
 {
 	int i;
 
 	for (i = 0; i < sizeof(pattern); i++)
-		pattern[i] = random();
+		pattern[i] = prng_next(&prng);
 }
 
 static size_t choose(size_t n, size_t suggest)
@@ -80,7 +82,7 @@ static void stream_pattern(size_t is, size_t ms, size_t os)
 
 int main(void)
 {
-	srandom(0);
+	prng_init(&prng, 1);
 	init_pattern();
 
 	cbuf_init(&buf_a, data_a, sizeof(data_a));
