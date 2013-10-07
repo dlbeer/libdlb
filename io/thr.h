@@ -74,27 +74,27 @@ static inline int thr_event_init(thr_event_t *e)
 
 static inline void thr_event_destroy(thr_event_t *e)
 {
-	CloseHandle(e);
+	CloseHandle(*e);
 }
 
 static inline void thr_event_raise(thr_event_t *e)
 {
-	SetEvent(e);
+	SetEvent(*e);
 }
 
 static inline void thr_event_clear(thr_event_t *e)
 {
-	ResetEvent(e);
+	ResetEvent(*e);
 }
 
 static inline void thr_event_wait(thr_event_t *e)
 {
-	WaitForSingleObject(e, INFINITE);
+	WaitForSingleObject(*e, INFINITE);
 }
 
 static inline int thr_event_wait_timeout(thr_event_t *e, int timeout_ms)
 {
-	return WaitForSingleObject(e, timeout_ms);
+	return WaitForSingleObject(*e, timeout_ms);
 }
 #else
 #include <pthread.h>
