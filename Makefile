@@ -13,29 +13,37 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+ifeq ($(OS),Windows_NT)
+    OS_CFLAGS = -D__Windows__
+    TEST = .exe
+else
+    TEST = .test
+endif
+
 TESTS = \
-    tests/containers.test \
-    tests/list.test \
-    tests/vector.test \
-    tests/rbt.test \
-    tests/rbt_iter.test \
-    tests/rbt_range.test \
-    tests/slab.test \
-    tests/hash.test \
-    tests/strbuf.test \
-    tests/istr.test \
-    tests/bint.test \
-    tests/slist.test \
-    tests/cbuf.test \
-    tests/syserr.test \
-    tests/clock.test \
-    tests/thr.test \
-    tests/runq.test \
-    tests/waitq.test \
-    tests/ioq.test \
-    tests/mailbox.test \
-    tests/afile.test
-CFLAGS = -O1 -Wall -ggdb -Isrc -Iio
+    tests/containers$(TEST) \
+    tests/list$(TEST) \
+    tests/vector$(TEST) \
+    tests/rbt$(TEST) \
+    tests/rbt_iter$(TEST) \
+    tests/rbt_range$(TEST) \
+    tests/slab$(TEST) \
+    tests/hash$(TEST) \
+    tests/strbuf$(TEST) \
+    tests/istr$(TEST) \
+    tests/bint$(TEST) \
+    tests/slist$(TEST) \
+    tests/cbuf$(TEST) \
+    tests/syserr$(TEST) \
+    tests/clock$(TEST) \
+    tests/thr$(TEST) \
+    tests/runq$(TEST) \
+    tests/waitq$(TEST) \
+    tests/ioq$(TEST) \
+    tests/mailbox$(TEST) \
+    tests/afile$(TEST)
+
+CFLAGS = -O1 -Wall -ggdb -Isrc -Iio $(OS_CFLAGS)
 CC = gcc
 
 all: $(TESTS)
@@ -49,77 +57,77 @@ test: $(TESTS)
 
 clean:
 	rm -f */*.o
-	rm -f tests/*.test
+	rm -f tests/*$(TEST)
 
-tests/containers.test: tests/test_containers.o
+tests/containers$(TEST): tests/test_containers.o
 	$(CC) -o $@ $^
 
-tests/list.test: tests/test_list.o src/list.o
+tests/list$(TEST): tests/test_list.o src/list.o
 	$(CC) -o $@ $^
 
-tests/vector.test: tests/test_vector.o src/vector.o
+tests/vector$(TEST): tests/test_vector.o src/vector.o
 	$(CC) -o $@ $^
 
-tests/rbt.test: tests/test_rbt.o src/rbt.o
+tests/rbt$(TEST): tests/test_rbt.o src/rbt.o
 	$(CC) -o $@ $^
 
-tests/rbt_iter.test: tests/test_rbt_iter.o src/rbt.o src/rbt_iter.o
+tests/rbt_iter$(TEST): tests/test_rbt_iter.o src/rbt.o src/rbt_iter.o
 	$(CC) -o $@ $^
 
-tests/rbt_range.test: tests/test_rbt_range.o src/rbt.o src/rbt_range.o
+tests/rbt_range$(TEST): tests/test_rbt_range.o src/rbt.o src/rbt_range.o
 	$(CC) -o $@ $^
 
-tests/slab.test: tests/test_slab.o src/slab.o src/list.o
+tests/slab$(TEST): tests/test_slab.o src/slab.o src/list.o
 	$(CC) -o $@ $^
 
-tests/hash.test: tests/test_hash.o src/hash.o
+tests/hash$(TEST): tests/test_hash.o src/hash.o
 	$(CC) -o $@ $^
 
-tests/strbuf.test: tests/test_strbuf.o src/strbuf.o
+tests/strbuf$(TEST): tests/test_strbuf.o src/strbuf.o
 	$(CC) -o $@ $^
 
-tests/istr.test: tests/test_istr.o src/istr.o src/strbuf.o src/hash.o \
+tests/istr$(TEST): tests/test_istr.o src/istr.o src/strbuf.o src/hash.o \
 		 src/slab.o src/list.o
 	$(CC) -o $@ $^
 
-tests/bint.test: tests/test_bint.o src/bint.o
+tests/bint$(TEST): tests/test_bint.o src/bint.o
 	$(CC) -o $@ $^
 
-tests/slist.test: tests/test_slist.o src/slist.o
+tests/slist$(TEST): tests/test_slist.o src/slist.o
 	$(CC) -o $@ $^
 
-tests/cbuf.test: tests/test_cbuf.o src/cbuf.o
+tests/cbuf$(TEST): tests/test_cbuf.o src/cbuf.o
 	$(CC) -o $@ $^
 
-tests/syserr.test: tests/test_syserr.o
+tests/syserr$(TEST): tests/test_syserr.o
 	$(CC) -o $@ $^
 
-tests/clock.test: tests/test_clock.o io/clock.o
+tests/clock$(TEST): tests/test_clock.o io/clock.o
 	$(CC) -o $@ $^ -lrt
 
-tests/thr.test: tests/test_thr.o io/thr.o io/clock.o
+tests/thr$(TEST): tests/test_thr.o io/thr.o io/clock.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/runq.test: tests/test_runq.o io/runq.o io/thr.o \
+tests/runq$(TEST): tests/test_runq.o io/runq.o io/thr.o \
 		    src/slist.o io/clock.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/waitq.test: tests/test_waitq.o io/waitq.o io/runq.o \
+tests/waitq$(TEST): tests/test_waitq.o io/waitq.o io/runq.o \
 		  io/thr.o io/clock.o src/slist.o src/rbt.o \
 		  src/rbt_iter.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/ioq.test: tests/test_ioq.o io/ioq.o io/waitq.o \
+tests/ioq$(TEST): tests/test_ioq.o io/ioq.o io/waitq.o \
 		io/runq.o io/thr.o io/clock.o src/slist.o \
 		src/rbt.o src/rbt_iter.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/afile.test: tests/test_afile.o io/ioq.o io/waitq.o \
+tests/afile$(TEST): tests/test_afile.o io/ioq.o io/waitq.o \
 		  io/runq.o io/thr.o io/clock.o src/slist.o \
 		  src/rbt.o src/rbt_iter.o io/afile.o
 	$(CC) -o $@ $^ -lpthread -lrt
 
-tests/mailbox.test: tests/test_mailbox.o io/mailbox.o io/runq.o \
+tests/mailbox$(TEST): tests/test_mailbox.o io/mailbox.o io/runq.o \
 		    io/thr.o src/slist.o
 	$(CC) -o $@ $^ -lpthread
 
