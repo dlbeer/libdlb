@@ -18,6 +18,8 @@ ifeq ($(OS),Windows_NT)
     TEST = .exe
 else
     TEST = .test
+    LIB_RT = -lrt
+    LIB_PTHREAD = -lpthread
 endif
 
 TESTS = \
@@ -103,33 +105,33 @@ tests/syserr$(TEST): tests/test_syserr.o
 	$(CC) -o $@ $^
 
 tests/clock$(TEST): tests/test_clock.o io/clock.o
-	$(CC) -o $@ $^ -lrt
+	$(CC) -o $@ $^ $(LIB_RT)
 
 tests/thr$(TEST): tests/test_thr.o io/thr.o io/clock.o
-	$(CC) -o $@ $^ -lpthread -lrt
+	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_RT)
 
 tests/runq$(TEST): tests/test_runq.o io/runq.o io/thr.o \
 		    src/slist.o io/clock.o
-	$(CC) -o $@ $^ -lpthread -lrt
+	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_RT)
 
 tests/waitq$(TEST): tests/test_waitq.o io/waitq.o io/runq.o \
 		  io/thr.o io/clock.o src/slist.o src/rbt.o \
 		  src/rbt_iter.o
-	$(CC) -o $@ $^ -lpthread -lrt
+	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_RT)
 
 tests/ioq$(TEST): tests/test_ioq.o io/ioq.o io/waitq.o \
 		io/runq.o io/thr.o io/clock.o src/slist.o \
 		src/rbt.o src/rbt_iter.o
-	$(CC) -o $@ $^ -lpthread -lrt
+	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_RT)
 
 tests/afile$(TEST): tests/test_afile.o io/ioq.o io/waitq.o \
 		  io/runq.o io/thr.o io/clock.o src/slist.o \
 		  src/rbt.o src/rbt_iter.o io/afile.o
-	$(CC) -o $@ $^ -lpthread -lrt
+	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_RT)
 
 tests/mailbox$(TEST): tests/test_mailbox.o io/mailbox.o io/runq.o \
 		    io/thr.o src/slist.o
-	$(CC) -o $@ $^ -lpthread
+	$(CC) -o $@ $^ $(LIB_PTHREAD)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $*.o -c $*.c
