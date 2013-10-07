@@ -15,10 +15,10 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <assert.h>
+#include "prng.h"
 #include "rbt.h"
 
 struct record {
@@ -46,6 +46,7 @@ static int cmp_record(const void *k, const struct rbt_node *n)
 
 static struct record recs[N];
 static struct record *ordering[N];
+static prng_t prng;
 
 static struct rbt tree = {
 	.compare = cmp_record,
@@ -90,6 +91,7 @@ static int check_recurse(struct rbt_node *n, struct rbt_node *p)
 
 	lc = check_recurse(n->left, n);
 	rc = check_recurse(n->right, n);
+	assert(lc == rc);
 
 	if (RBT_IS_RED(n))
 		return lc;
@@ -144,7 +146,7 @@ static void test_shuffle(void)
 	int i;
 
 	for (i = N - 1; i > 0; i--) {
-		int j = random() % i;
+		int j = prng_next(&prng) % i;
 
 		if (i != j) {
 			struct record *t = ordering[i];
@@ -211,7 +213,7 @@ static void test_delete(void)
 
 int main(void)
 {
-	srandom(time(NULL));
+	prng_init(&prng, time(NULL));
 
 	test_init();
 	test_shuffle();
