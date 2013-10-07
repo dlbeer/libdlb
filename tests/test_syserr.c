@@ -33,6 +33,6 @@ int main(void)
 	assert(msg[0]);
 	assert(strlen(msg) < 128);
 
-	printf("%d: %s\n", err, msg);
+	printf("%d: %s\n", (int)err, msg);
 	return 0;
 }
