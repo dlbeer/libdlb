@@ -1129,6 +1129,7 @@ unsigned int bint_digit_pop(struct bint *b, unsigned int base)
 	return remainder;
 }
 
+#ifndef __Windows__
 __attribute__((weak)) struct bint_chunk *bint_chunk_alloc(void)
 {
 	struct bint_chunk *c = malloc(sizeof(struct bint_chunk));
@@ -1143,3 +1144,4 @@ __attribute__((weak)) void bint_chunk_free(struct bint_chunk *c)
 {
 	free(c);
 }
+#endif
