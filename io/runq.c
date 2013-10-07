@@ -23,14 +23,14 @@ static int run_one(struct runq *r)
 	struct slist_node *n;
 	struct runq_task *t;
 
-	pthread_mutex_lock(&r->lock);
+	thr_mutex_lock(&r->lock);
 	if (r->quit_request) {
-		pthread_mutex_unlock(&r->lock);
+		thr_mutex_unlock(&r->lock);
 		return -1;
 	}
 
 	n = slist_pop(&r->job_list);
-	pthread_mutex_unlock(&r->lock);
+	thr_mutex_unlock(&r->lock);
 
 	if (!n)
 		return 0;
@@ -68,9 +68,9 @@ static void join_worker(struct runq_worker *w)
 
 static void request_quit(struct runq *r)
 {
-	pthread_mutex_lock(&r->lock);
+	thr_mutex_lock(&r->lock);
 	r->quit_request = 1;
-	pthread_mutex_unlock(&r->lock);
+	thr_mutex_unlock(&r->lock);
 }
 
 static int init_worker(struct runq *r, struct runq_worker *w)
