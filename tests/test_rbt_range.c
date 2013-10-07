@@ -14,11 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <assert.h>
-
+#include "prng.h"
 #include "rbt.h"
 #include "rbt_range.h"
 
@@ -32,6 +31,7 @@ struct record {
 
 static struct record primes[N];
 static struct rbt tree;
+static prng_t prng;
 
 static int cmp_record(const void *kd, const struct rbt_node *n)
 {
@@ -183,8 +183,8 @@ static int range_query(int low, int high)
 static void query_test(int count)
 {
 	while (count--) {
-		int low = random() % (primes[N - 1].key + 10);
-		int high = random() % (primes[N - 1].key + 10);
+		int low = prng_next(&prng) % (primes[N - 1].key + 10);
+		int high = prng_next(&prng) % (primes[N - 1].key + 10);
 		volatile int result_iter;
 		volatile int result_range;
 
@@ -205,7 +205,7 @@ static void query_test(int count)
 int main(void)
 {
 	tree.compare = cmp_record;
-	srandom(time(NULL));
+	prng_init(&prng, time(NULL));
 
 	init_primes();
 
