@@ -17,27 +17,14 @@
 #ifndef IO_IOQ_H_
 #define IO_IOQ_H_
 
-#include <sys/epoll.h>
 #include "runq.h"
 #include "waitq.h"
-#include "slist.h"
-#include "syserr.h"
 
-/* IO queue. This structure integrates a run queue and a wait queue. */
-struct ioq {
-	struct runq		run;
-	struct waitq		wait;
-
-	thr_mutex_t		lock;
-	struct slist		mod_list;
-
-	/* Wakeup pipe */
-	int			intr[2];
-	int			intr_state;
-
-	/* epoll file descriptor */
-	int			epoll_fd;
-};
+#ifdef __Windows__
+#include "ioq_windows.h"
+#else
+#include "ioq_linux.h"
+#endif
 
 /* Initialize an IO queue with the given number of background threads
  * (may be 0 for a single-threaded loop).
@@ -77,107 +64,6 @@ static inline struct runq *ioq_runq(struct ioq *q)
 static inline struct waitq *ioq_waitq(struct ioq *q)
 {
 	return &q->wait;
-}
-
-/* This is the set of POSIX file descriptor events which can be waited
- * for. These are level-triggered events.
- */
-typedef uint32_t ioq_fd_mask_t;
-
-#define IOQ_EVENT_IN		EPOLLIN
-#define IOQ_EVENT_OUT		EPOLLOUT
-#define IOQ_EVENT_ERR		EPOLLERR
-#define IOQ_EVENT_HUP		EPOLLHUP
-
-/* Wait object for use with an IO queue. Each one of these objects is
- * associated with a single file descriptor and may have one outstanding
- * IO operation.
- *
- * No two ioq_fd objects may refer to the same file descriptor.
- *
- * Simultaneous access to the same ioq_fd by multiple threads is not
- * allowed.
- */
-#define IOQ_FLAG_MOD_LIST	0x01
-#define IOQ_FLAG_EPOLL		0x02
-#define IOQ_FLAG_WAITING	0x04
-
-struct ioq_fd {
-	/* This must be the first element */
-	struct runq_task	task;
-
-	/* This data never changes after init */
-	int			fd;
-	struct ioq		*owner;
-
-	/* This data is set when dispatching */
-	ioq_fd_mask_t		ready;
-	syserr_t		err;
-
-	/* If any changes must be made to this fd's epoll association,
-	 * it's done by placing the ioq_fd in the mod_list, and setting
-	 * the requested field. This data is shared between the client
-	 * strand and the dispatch loop.
-	 *
-	 * The flags field tells us which data structures this ioq_fd
-	 * belongs to (mod_list and kernel's internal epoll structures).
-	 */
-	int			flags;
-	struct slist_node	mod_list;
-	ioq_fd_mask_t		requested;
-};
-
-/* Type of asynchronous callback for an IO wait operation. */
-typedef void (*ioq_fd_func_t)(struct ioq_fd *f);
-
-/* Initialize an ioq_fd object, associating it with an IO queue and a
- * file descriptor.
- *
- * The file descriptor is never modified, and the caller remains
- * responsible for closing it.
- */
-void ioq_fd_init(struct ioq_fd *f, struct ioq *q, int fd);
-
-/* Obtain the set of IO events which are ready (if any) */
-static inline ioq_fd_mask_t ioq_fd_ready(const struct ioq_fd *f)
-{
-	return f->ready;
-}
-
-/* Obtain the error code from the last wait operation (will be 0 if no
- * error occured). Note that a successful wait may still result in an
- * error *event*. This is different to an error encountered during the
- * wait operation itself.
- */
-static inline syserr_t ioq_fd_error(const struct ioq_fd *f)
-{
-	return f->err;
-}
-
-/* Begin a wait operation on an ioq_fd object. The given callback will
- * be invoked when any of the (level-triggered) events in the set occur.
- * The following rules must be observed:
- *
- *    (1) only one wait operation may be in progress at any time
- *    (2) the ioq_fd may not be modified/destroyed/reused while a wait
- *        operation is in progress (except for cancel/rewait).
- *    (3) the wait operation is ended as soon as the callback begins
- *        execution, at which point it is safe to reuse/modify/destroy
- *        the ioq_fd.
- */
-void ioq_fd_wait(struct ioq_fd *f, ioq_fd_mask_t set, ioq_fd_func_t func);
-
-/* Attempt to alter the conditions of an IO operation which is in
- * progress. If successful, the set of events waited for will be
- * altered. If the wait has already terminated (or is in the process of
- * terminating), this operation will have no effect.
- */
-void ioq_fd_rewait(struct ioq_fd *f, ioq_fd_mask_t set);
-
-/* Attempt to cancel an IO wait operation. */
-static inline void ioq_fd_cancel(struct ioq_fd *f)
-{
-	ioq_fd_rewait(f, 0);
 }
 
 #endif
