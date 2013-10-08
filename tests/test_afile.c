@@ -20,6 +20,7 @@
 #include "ioq.h"
 #include "containers.h"
 #include "afile.h"
+#include "prng.h"
 
 #define N		65536
 #define MAX_WRITE	8192
@@ -55,7 +56,7 @@ static void write_done(struct afile *f)
 
 	if (w->ptr >= sizeof(pattern)) {
 		printf("Writer done\n");
-		close(afile_get_handle(&w->writer));
+		handle_close(afile_get_handle(&w->writer));
 	} else {
 		begin_wait(w);
 	}
@@ -72,7 +73,7 @@ static void wait_done(struct waitq_timer *timer)
 	afile_write(&w->writer, pattern + w->ptr, xfer, write_done);
 }
 
-static void writer_start(struct writer_proc *w, struct ioq *q, int fd)
+static void writer_start(struct writer_proc *w, struct ioq *q, handle_t fd)
 {
 	afile_init(&w->writer, q, fd);
 	waitq_timer_init(&w->timer, ioq_waitq(q));
@@ -106,11 +107,16 @@ static void read_done(struct afile *a)
 {
 	struct reader_proc *r = container_of(a, struct reader_proc, reader);
 
-	assert (!afile_read_error(&r->reader));
+	if (afile_read_error(&r->reader)) {
+		char msg[128];
 
-	if (!afile_read_size(&r->reader)) {
 		r->eof = 1;
-		close(afile_get_handle(&r->reader));
+		handle_close(afile_get_handle(&r->reader));
+		syserr_format(afile_read_error(&r->reader), msg, sizeof(msg));
+		printf("Read: %s\n", msg);
+	} else if (!afile_read_size(&r->reader)) {
+		r->eof = 1;
+		handle_close(afile_get_handle(&r->reader));
 		printf("End of read stream\n");
 	} else {
 		r->ptr += afile_read_size(&r->reader);
@@ -120,7 +126,7 @@ static void read_done(struct afile *a)
 	}
 }
 
-static void reader_start(struct reader_proc *r, struct ioq *q, int fd)
+static void reader_start(struct reader_proc *r, struct ioq *q, handle_t fd)
 {
 	afile_init(&r->reader, q, fd);
 	r->ptr = 0;
@@ -135,26 +141,72 @@ static void reader_start(struct reader_proc *r, struct ioq *q, int fd)
 static void init_pattern(void)
 {
 	int i;
+	prng_t prng;
 
+	prng_init(&prng, 1);
 	for (i = 0; i < sizeof(pattern); i++)
-		pattern[i] = random();
+		pattern[i] = prng_next(&prng);
 }
+
+#ifdef __Windows__
+static void init_pipe(handle_t *pfd, struct ioq *q)
+{
+	OVERLAPPED ovl;
+	DWORD n;
+	int r;
+
+	pfd[0] = CreateNamedPipe("\\\\.\\pipe\\test_afile",
+		PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
+		PIPE_TYPE_BYTE,
+		PIPE_UNLIMITED_INSTANCES,
+		0, 0, 0, NULL);
+	assert(pfd[0] != INVALID_HANDLE_VALUE);
+
+	memset(&ovl, 0, sizeof(ovl));
+	ConnectNamedPipe(pfd[0], &ovl);
+	assert(GetLastError() == ERROR_IO_PENDING);
+
+	pfd[1] = CreateFile("\\\\.\\pipe\\test_afile",
+		GENERIC_WRITE,
+		0,
+		NULL,
+		OPEN_EXISTING,
+		FILE_FLAG_OVERLAPPED,
+		NULL);
+	assert(pfd[1] != INVALID_HANDLE_VALUE);
+
+	r = GetOverlappedResult(pfd[0], &ovl, &n, TRUE);
+	assert(r);
+
+	r = ioq_bind(q, pfd[0]);
+	assert(!r);
+
+	r = ioq_bind(q, pfd[1]);
+	assert(!r);
+}
+#else
+static void init_pipe(handle_t *pfd, struct ioq *q)
+{
+	int r = pipe(pfd);
+
+	assert(r >= 0);
+}
+#endif
 
 int main(void)
 {
 	struct ioq ioq;
 	struct writer_proc writer;
 	struct reader_proc reader;
-	int pfd[2];
+	handle_t pfd[2];
 	int r;
 
 	init_pattern();
 
-	r = pipe(pfd);
-	assert(r >= 0);
-
 	r = ioq_init(&ioq, 0);
 	assert(r >= 0);
+
+	init_pipe(pfd, &ioq);
 
 	writer_start(&writer, &ioq, pfd[1]);
 	reader_start(&reader, &ioq, pfd[0]);

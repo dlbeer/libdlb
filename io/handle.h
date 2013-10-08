@@ -28,10 +28,17 @@ typedef HANDLE handle_t;
 
 static inline int handle_is_valid(handle_t h)
 {
-	return h;
+	return (h != NULL) && (h != INVALID_HANDLE_VALUE);
+}
+
+static inline void handle_close(handle_t h)
+{
+	CloseHandle(h);
 }
 
 #else
+
+#include <unistd.h>
 
 typedef int handle_t;
 
@@ -40,6 +47,11 @@ typedef int handle_t;
 static inline int handle_is_valid(handle_t h)
 {
 	return h >= 0;
+}
+
+static inline void handle_close(handle_t h)
+{
+	close(h);
 }
 
 #endif
