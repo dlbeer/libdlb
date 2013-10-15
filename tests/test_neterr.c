@@ -27,14 +27,14 @@
 int main(void)
 {
 	struct sockaddr_in bad;
-	struct neterr err;
+	neterr_t err;
 	char buf[128];
 
 	memset(&bad, 0, sizeof(bad));
 	connect(-1, (struct sockaddr *)&bad, sizeof(bad));
 
-	neterr_get(&err);
-	neterr_format(&err, buf, sizeof(buf));
+	err = neterr_last();
+	neterr_format(err, buf, sizeof(buf));
 	puts(buf);
 
 	return 0;

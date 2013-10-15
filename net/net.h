@@ -23,16 +23,29 @@
  * called at startup before any network functions are used, and at exit
  * to clean up.
  *
- * net_start() returns 0 on success or -1 if an error occurs. The error
- * code may optionally be returned in the supplied structure.
+ * net_start() returns an error code (NETERR_NONE if successful).
  */
 #ifdef __Windows__
-int net_start(struct neterr *e);
-void net_stop(void);
-#else
-static inline int net_start(struct neterr *e)
+static inline neterr_t net_start(void)
 {
-	return 0;
+	WSADATA data;
+
+	return WSAStartup(MAKEWORD(2, 2), &data);
+}
+
+void net_stop(void)
+{
+	WSACleanup();
+}
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+static inline neterr_t net_start(void)
+{
+	return NETERR_NONE;
 }
 
 static inline void net_stop(void) { }

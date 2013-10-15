@@ -20,12 +20,13 @@
 
 int main(void)
 {
-	struct neterr e;
+	neterr_t e;
 
-	if (net_start(&e) < 0) {
+	e = net_start();
+	if (e != NETERR_NONE) {
 		char buf[128];
 
-		neterr_format(&e, buf, sizeof(buf));
+		neterr_format(e, buf, sizeof(buf));
 		fprintf(stderr, "%s\n", buf);
 		abort();
 	}

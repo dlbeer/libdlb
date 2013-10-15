@@ -135,10 +135,10 @@ tests/mailbox$(TEST): tests/test_mailbox.o io/mailbox.o io/runq.o \
 		    io/thr.o src/slist.o
 	$(CC) -o $@ $^ $(LIB_PTHREAD)
 
-tests/neterr$(TEST): tests/test_neterr.o net/neterr.o
+tests/neterr$(TEST): tests/test_neterr.o
 	$(CC) -o $@ $^
 
-tests/net$(TEST): tests/test_net.o net/neterr.o net/net.o
+tests/net$(TEST): tests/test_net.o
 	$(CC) -o $@ $^
 
 %.o: %.c

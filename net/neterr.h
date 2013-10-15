@@ -22,60 +22,36 @@
 #include <windows.h>
 #include <winsock2.h>
 
-struct neterr {
-	DWORD		sys;
-};
-
 typedef DWORD neterr_t;
 
-static inline void neterr_get(struct neterr *e)
+static inline neterr_t neterr_last(struct neterr *e)
 {
-	e->sys = WSAGetLastError();
+	return WSAGetLastError();
 }
 
-static inline void neterr_get_h(struct neterr *e)
+static inline void neterr_format(neterr_t e, char *buf, size_t max_size)
 {
-	e->sys = WSAGetLastError();
-}
-
-static inline void neterr_format(const struct neterr *e,
-				 char *buf, size_t max_size)
-{
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, e->sys, 0,
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, e, 0,
 		      buf, max_size, NULL);
 }
 #else
 #include <errno.h>
-#include <netdb.h>
+#include <string.h>
 
-struct neterr {
-	int		sys;
-	int		herr;
-};
+typedef int neterr_t;
 
-static inline void neterr_get(struct neterr *e)
+static inline neterr_t neterr_last(void)
 {
-	e->sys = errno;
-	e->herr = 0;
+	return errno;
 }
 
-static inline void neterr_get_h(struct neterr *e)
+static inline void neterr_format(neterr_t e, char *buf, size_t max_size)
 {
-	e->sys = 1;
-	e->herr = h_errno;
+	strncpy(buf, strerror(e), max_size);
+	buf[max_size - 1] = 0;
 }
-
-void neterr_format(const struct neterr *e, char *buf, size_t max_size);
 #endif
 
-static inline void neterr_clear(struct neterr *e)
-{
-	e->sys = 0;
-}
-
-static inline int neterr_is_ok(const struct neterr *e)
-{
-	return !e->sys;
-}
+#define NETERR_NONE ((neterr_t)0)
 
 #endif
