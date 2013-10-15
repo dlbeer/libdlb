@@ -48,10 +48,7 @@ static struct record recs[N];
 static struct record *ordering[N];
 static prng_t prng;
 
-static struct rbt tree = {
-	.compare = cmp_record,
-	.root = NULL
-};
+static struct rbt tree;
 
 static void check_summary(struct rbt_node *n)
 {
@@ -134,6 +131,8 @@ static void test_not_present(int f, int len)
 static void test_init(void)
 {
 	int i;
+
+	rbt_init(&tree, cmp_record);
 
 	for (i = 0; i < N; i++) {
 		recs[i].key = i;

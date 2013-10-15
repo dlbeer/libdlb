@@ -56,8 +56,7 @@ static void test_init(void)
 		ordering[i] = &recs[i];
 	}
 
-	memset(&tree, 0, sizeof(tree));
-	tree.compare = cmp_record;
+	rbt_init(&tree, cmp_record);
 }
 
 static void test_shuffle(void)

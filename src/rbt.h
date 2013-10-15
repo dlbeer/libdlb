@@ -17,6 +17,8 @@
 #ifndef RBT_H_
 #define RBT_H_
 
+#include <stddef.h>
+
 /* This is the base of a tree node. It should be embedded within a larger
  * data structure containing a key and optionally some data.
  *
@@ -48,6 +50,12 @@ struct rbt {
 	rbt_compare_t		compare;
 	struct rbt_node		*root;
 };
+
+static inline void rbt_init(struct rbt *t, rbt_compare_t cmp)
+{
+	t->root = NULL;
+	t->compare = cmp;
+}
 
 struct rbt_node *rbt_find(const struct rbt *t, const void *key);
 

@@ -60,8 +60,7 @@ void waitq_init(struct waitq *wq, struct runq *rq)
 	wq->run = rq;
 	wq->wakeup = NULL;
 	thr_mutex_init(&wq->lock);
-	wq->waiting_set.root = NULL;
-	wq->waiting_set.compare = cmp_by_deadline;
+	rbt_init(&wq->waiting_set, cmp_by_deadline);
 }
 
 void waitq_destroy(struct waitq *wq)

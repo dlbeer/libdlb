@@ -204,7 +204,7 @@ static void query_test(int count)
 
 int main(void)
 {
-	tree.compare = cmp_record;
+	rbt_init(&tree, cmp_record);
 	prng_init(&prng, time(NULL));
 
 	init_primes();
