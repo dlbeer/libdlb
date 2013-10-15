@@ -53,6 +53,9 @@ int main(int argc, char **argv)
 	struct adns_request reqs[argc];
 	int i;
 
+	i = net_start();
+	assert(i == NETERR_NONE);
+
 	i = runq_init(&run, 0);
 	assert(i >= 0);
 
@@ -72,5 +75,7 @@ int main(int argc, char **argv)
 
 	adns_resolver_destroy(&res);
 	runq_destroy(&run);
+	net_stop();
+
 	return 0;
 }
