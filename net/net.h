@@ -33,7 +33,7 @@ static inline neterr_t net_start(void)
 	return WSAStartup(MAKEWORD(2, 2), &data);
 }
 
-void net_stop(void)
+static inline void net_stop(void)
 {
 	WSACleanup();
 }

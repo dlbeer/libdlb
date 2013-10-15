@@ -21,10 +21,11 @@
 #ifdef __Windows__
 #include <windows.h>
 #include <winsock2.h>
+#include <ws2tcpip.h>
 
 typedef DWORD neterr_t;
 
-static inline neterr_t neterr_last(struct neterr *e)
+static inline neterr_t neterr_last(void)
 {
 	return WSAGetLastError();
 }

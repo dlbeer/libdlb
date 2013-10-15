@@ -16,6 +16,7 @@
 ifeq ($(OS),Windows_NT)
     OS_CFLAGS = -D__Windows__
     TEST = .exe
+    LIB_NET = -lws2_32
 else
     TEST = .test
     LIB_RT = -lrt
@@ -137,14 +138,14 @@ tests/mailbox$(TEST): tests/test_mailbox.o io/mailbox.o io/runq.o \
 	$(CC) -o $@ $^ $(LIB_PTHREAD)
 
 tests/neterr$(TEST): tests/test_neterr.o
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(LIB_NET)
 
 tests/net$(TEST): tests/test_net.o
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(LIB_NET)
 
 tests/adns$(TEST): tests/test_adns.o net/adns.o io/runq.o src/list.o \
 		   src/slist.o io/thr.o
-	$(CC) -o $@ $^ $(LIB_PTHREAD)
+	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_NET)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $*.o -c $*.c
