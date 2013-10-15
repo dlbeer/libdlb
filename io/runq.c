@@ -167,7 +167,7 @@ void runq_task_exec(struct runq_task *t, runq_task_func_t func)
 	t->func = func;
 
 	thr_mutex_lock(&r->lock);
-	was_empty = SLIST_EMPTY(&r->job_list);
+	was_empty = Slist_is_empty(&r->job_list);
 	slist_append(&r->job_list, &t->job_list);
 	thr_mutex_unlock(&r->lock);
 

@@ -98,8 +98,8 @@ int main(void)
 	assert(!pool.desc_count);
 	assert(!pool.all);
 	assert(!pool.text.length);
-	assert(LIST_EMPTY(&pool.descs.full));
-	assert(LIST_EMPTY(&pool.descs.partial));
+	assert(list_is_empty(&pool.descs.full));
+	assert(list_is_empty(&pool.descs.partial));
 
 	istr_pool_destroy(&pool);
 	return 0;

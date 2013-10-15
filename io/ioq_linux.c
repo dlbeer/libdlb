@@ -127,7 +127,7 @@ static int mod_enqueue_nolock(struct ioq *q, struct ioq_fd *f)
 	int need_wakeup = 0;
 
 	if (!(f->flags & IOQ_FLAG_MOD_LIST)) {
-		need_wakeup = SLIST_EMPTY(&q->mod_list);
+		need_wakeup = Slist_is_empty(&q->mod_list);
 		f->flags |= IOQ_FLAG_MOD_LIST;
 		slist_append(&q->mod_list, &f->mod_list);
 	}

@@ -80,7 +80,7 @@ static void free_slab(struct slab *s, struct slab_info *inf)
 
 static void free_all_slabs(struct slab *s, struct list_node *list)
 {
-	while (!LIST_EMPTY(list))
+	while (!list_is_empty(list))
 		free_slab(s, (struct slab_info *)list->next);
 }
 
@@ -127,7 +127,7 @@ void *slab_alloc(struct slab *s)
 	struct slab_info *inf;
 	struct slab_free *fr;
 
-	if (LIST_EMPTY(&s->partial) && alloc_new_slab(s) < 0)
+	if (list_is_empty(&s->partial) && alloc_new_slab(s) < 0)
 		return NULL;
 
 	/* Get the first non-full slab, and the first free object within
@@ -143,7 +143,7 @@ void *slab_alloc(struct slab *s)
 	/* If the slab is now completely used, remove it from the partial
 	 * list and put it on the full list.
 	 */
-	if (LIST_EMPTY(&inf->free_list)) {
+	if (list_is_empty(&inf->free_list)) {
 		list_remove(&inf->link);
 		list_insert(&inf->link, &s->full);
 	}
@@ -161,7 +161,7 @@ void slab_free(struct slab *s, void *obj)
 	 * so remove it from the full list and put it on the partial
 	 * list.
 	 */
-	if (LIST_EMPTY(&inf->free_list)) {
+	if (list_is_empty(&inf->free_list)) {
 		list_remove(&inf->link);
 		list_insert(&inf->link, &s->partial);
 	}

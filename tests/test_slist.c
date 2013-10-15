@@ -83,12 +83,12 @@ static void test_pop(void)
 int main(void)
 {
 	slist_init(&lst);
-	assert(SLIST_EMPTY(&lst));
+	assert(Slist_is_empty(&lst));
 
 	test_append();
 	test_verify();
 	test_pop();
-	assert(SLIST_EMPTY(&lst));
+	assert(Slist_is_empty(&lst));
 
 	test_push();
 	test_verify();
