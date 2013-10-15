@@ -44,7 +44,8 @@ TESTS = \
     tests/ioq$(TEST) \
     tests/mailbox$(TEST) \
     tests/afile$(TEST) \
-    tests/neterr$(TEST)
+    tests/neterr$(TEST) \
+    tests/net$(TEST)
 
 CFLAGS = -O1 -Wall -ggdb -Isrc -Iio -Inet $(OS_CFLAGS)
 CC = gcc
@@ -135,6 +136,9 @@ tests/mailbox$(TEST): tests/test_mailbox.o io/mailbox.o io/runq.o \
 	$(CC) -o $@ $^ $(LIB_PTHREAD)
 
 tests/neterr$(TEST): tests/test_neterr.o net/neterr.o
+	$(CC) -o $@ $^
+
+tests/net$(TEST): tests/test_net.o net/neterr.o net/net.o
 	$(CC) -o $@ $^
 
 %.o: %.c
