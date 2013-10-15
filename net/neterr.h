@@ -19,7 +19,7 @@
 
 /* Network stack error codes */
 #ifdef __Windows__
-#include <windows.h>
+#include "winapi.h"
 #include <winsock2.h>
 #include <ws2tcpip.h>
 

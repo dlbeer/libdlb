@@ -21,7 +21,7 @@
 typedef void (*thr_func_t)(void *arg);
 
 #ifdef __Windows__
-#include <windows.h>
+#include "winapi.h"
 
 /* Thread creation/join */
 typedef HANDLE thr_thread_t;

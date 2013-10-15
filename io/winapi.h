@@ -14,54 +14,28 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef IO_SYSERR_H_
-#define IO_SYSERR_H_
+#ifndef IO_WINAPI_H_
+#define IO_WINAPI_H_
 
-#include <string.h>
-
-/* System error type */
+/* Workaround for buggy windows.h header */
 #ifdef __Windows__
-#include "winapi.h"
 
-typedef DWORD syserr_t;
-
-static inline syserr_t syserr_last(void)
-{
-	return GetLastError();
-}
-
-static inline void syserr_set(syserr_t err)
-{
-	SetLastError(err);
-}
-
-static inline void syserr_format(syserr_t err, char *buf, size_t max_size)
-{
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 0,
-		      buf, max_size, NULL);
-}
-#else
-#include <errno.h>
-
-typedef int syserr_t;
-
-static inline syserr_t syserr_last(void)
-{
-	return errno;
-}
-
-static inline void syserr_set(syserr_t err)
-{
-	errno = err;
-}
-
-static inline void syserr_format(syserr_t err, char *buf, size_t max_size)
-{
-	strncpy(buf, strerror(err), max_size);
-	buf[max_size - 1] = 0;
-}
+/* MinGW doesn't define this correctly, which means we end up with some
+ * functions hidden.
+ */
+#if _WIN32_WINNT < 0x0501
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
 #endif
 
-#define SYSERR_NONE ((syserr_t)0)
+/* MinGW's windows.h includes winsock.h if we don't define certain
+ * guards. This prevents us from later including winsock2.h and
+ * ws2tcpip.h.
+ */
+#define __MSYS__
+#include <windows.h>
+#undef __MSYS__
+
+#endif
 
 #endif

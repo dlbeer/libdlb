@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <windows.h>
+#include "winapi.h"
 #include "syserr.h"
 
 /* DO NOT INCLUDE THIS FILE DIRECTLY */

@@ -17,7 +17,7 @@
 #include "clock.h"
 
 #ifdef __Windows__
-#include <windows.h>
+#include "winapi.h"
 
 clock_ticks_t clock_now(void)
 {

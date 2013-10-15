@@ -20,7 +20,7 @@
 /* File handle abstraction. */
 #ifdef __Windows__
 
-#include <windows.h>
+#include "winapi.h"
 
 typedef HANDLE handle_t;
 
