@@ -33,7 +33,10 @@ struct slist {
 };
 
 /* Check to see if a list contains anything. */
-#define Slist_is_empty(s) (!(s)->start)
+static inline int slist_is_empty(const struct slist *s)
+{
+	return !s->start;
+}
 
 /* Create an empty list */
 void slist_init(struct slist *s);
