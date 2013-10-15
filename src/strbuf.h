@@ -18,6 +18,7 @@
 #define STRBUF_H_
 
 #include <stdarg.h>
+#include <stddef.h>
 
 /* This structure is a resizable text buffer. It allows easy construction
  * and editing of dynamically sized strings. Strings kept in the buffer,
@@ -32,8 +33,8 @@
  */
 struct strbuf {
 	char		*text;
-	unsigned int	length;
-	unsigned int	capacity;
+	size_t		length;
+	size_t		capacity;
 	int		failed;
 };
 
@@ -42,6 +43,17 @@ struct strbuf {
  */
 void strbuf_init(struct strbuf *buf);
 void strbuf_destroy(struct strbuf *buf);
+
+/* Inlines for obtaining length, text */
+static inline const char *strbuf_text(const struct strbuf *buf)
+{
+	return buf->text;
+}
+
+static inline size_t strbuf_len(const struct strbuf *buf)
+{
+	return buf->length;
+}
 
 /* Clear a string, and reset the failed flag. */
 void strbuf_clear(struct strbuf *buf);
@@ -54,7 +66,7 @@ void strbuf_clear(struct strbuf *buf);
  * Returns 0 on success or -1 if memory couldn't be allocated (and
  * the failed flag will be set in this case).
  */
-int strbuf_resize(struct strbuf *buf, unsigned int new_length);
+int strbuf_resize(struct strbuf *buf, size_t new_length);
 
 /* This function may be called to preallocate memory. If successful,
  * 0 is returned and further calls to increase the string size or
@@ -64,7 +76,7 @@ int strbuf_resize(struct strbuf *buf, unsigned int new_length);
  * If the function fails, -1 is returned (but the failed flag is _not_
  * set).
  */
-int strbuf_capacity_hint(struct strbuf *buf, unsigned int length);
+int strbuf_capacity_hint(struct strbuf *buf, size_t length);
 
 /* Append characters and strings to the buffer. For strings containing
  * embedded nuls, a length may be explicitly specified. Otherwise, if

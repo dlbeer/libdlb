@@ -55,7 +55,7 @@ istr_t istr_pool_alloc(struct istr_pool *p, const char *text, int length)
 		return NULL;
 
 	d->owner = p;
-	d->offset = p->text.length;
+	d->offset = strbuf_len(&p->text);
 	d->length = length;
 	d->refcnt = 1;
 

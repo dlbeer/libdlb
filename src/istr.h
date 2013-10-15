@@ -36,8 +36,8 @@ struct istr_pool {
 struct istr_desc {
 	struct istr_desc	*next;
 	struct istr_pool	*owner;
-	unsigned int		offset;
-	unsigned int		length;
+	size_t			offset;
+	size_t			length;
 	unsigned int		refcnt;
 };
 
@@ -91,7 +91,7 @@ int istr_compare(istr_t a, istr_t b);
  */
 static inline const char *istr_text(istr_t s)
 {
-	return s->owner->text.text + s->offset;
+	return strbuf_text(&s->owner->text) + s->offset;
 }
 
 static inline unsigned int istr_length(istr_t s)

@@ -45,7 +45,7 @@ void strbuf_clear(struct strbuf *buf)
 	buf->text = (char *)strbuf_blank;
 }
 
-int strbuf_resize(struct strbuf *buf, unsigned int new_length)
+int strbuf_resize(struct strbuf *buf, size_t new_length)
 {
 	if (new_length + 1 > buf->capacity &&
 	    strbuf_capacity_hint(buf, new_length) < 0) {
@@ -62,9 +62,9 @@ int strbuf_resize(struct strbuf *buf, unsigned int new_length)
 	return 0;
 }
 
-int strbuf_capacity_hint(struct strbuf *buf, unsigned int length)
+int strbuf_capacity_hint(struct strbuf *buf, size_t length)
 {
-	unsigned int new_cap = 32;
+	size_t new_cap = 32;
 	char *new_text;
 
 	if (length < buf->length)
