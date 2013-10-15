@@ -45,7 +45,8 @@ TESTS = \
     tests/mailbox$(TEST) \
     tests/afile$(TEST) \
     tests/neterr$(TEST) \
-    tests/net$(TEST)
+    tests/net$(TEST) \
+    tests/adns$(TEST)
 
 CFLAGS = -O1 -Wall -ggdb -Isrc -Iio -Inet $(OS_CFLAGS)
 CC = gcc
@@ -140,6 +141,10 @@ tests/neterr$(TEST): tests/test_neterr.o
 
 tests/net$(TEST): tests/test_net.o
 	$(CC) -o $@ $^
+
+tests/adns$(TEST): tests/test_adns.o net/adns.o io/runq.o src/list.o \
+		   src/slist.o io/thr.o
+	$(CC) -o $@ $^ $(LIB_PTHREAD)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $*.o -c $*.c
