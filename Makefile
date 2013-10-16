@@ -47,7 +47,8 @@ TESTS = \
     tests/afile$(TEST) \
     tests/neterr$(TEST) \
     tests/net$(TEST) \
-    tests/adns$(TEST)
+    tests/adns$(TEST) \
+    tests/asock$(TEST)
 
 CFLAGS = -O1 -Wall -ggdb -Isrc -Iio -Inet $(OS_CFLAGS)
 CC = gcc
@@ -146,6 +147,11 @@ tests/net$(TEST): tests/test_net.o
 tests/adns$(TEST): tests/test_adns.o net/adns.o io/runq.o src/list.o \
 		   src/slist.o io/thr.o
 	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_NET)
+
+tests/asock$(TEST): tests/test_asock.o io/ioq.o io/waitq.o \
+		    io/runq.o io/thr.o io/clock.o src/slist.o \
+		    src/rbt.o src/rbt_iter.o net/asock.o
+	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_RT) $(LIB_NET)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $*.o -c $*.c
