@@ -41,43 +41,63 @@ static HANDLE pipe_read;
 static struct ioq_ovl ovl_read;
 static int read_ptr;
 static uint8_t rbuf[8192];
+static syserr_t read_error;
 
 static void read_done(struct ioq_ovl *o)
 {
-	if (ioq_ovl_error(&ovl_read)) {
+	DWORD count;
+
+	if (!read_error &&
+	    !GetOverlappedResult(pipe_read, ioq_ovl_lpo(&ovl_read),
+				 &count, FALSE))
+		read_error = syserr_last();
+
+	if (read_error) {
 		char msg[128];
 
-		syserr_format(ioq_ovl_error(&ovl_read), msg, sizeof(msg));
+		syserr_format(read_error, msg, sizeof(msg));
 		printf("Read: %s\n", msg);
 		CloseHandle(pipe_read);
 		done = 1;
 		return;
 	}
 
-	printf("Read %d bytes\n", (int)ioq_ovl_count(&ovl_read));
-	assert(ioq_ovl_count(&ovl_read));
-	assert(!memcmp(rbuf, pattern + read_ptr, ioq_ovl_count(&ovl_read)));
-	read_ptr += ioq_ovl_count(&ovl_read);
+	printf("Read %d bytes\n", (int)count);
+	assert(count);
+	assert(!memcmp(rbuf, pattern + read_ptr, count));
+	read_ptr += count;
 
+	read_error = 0;
 	ioq_ovl_wait(&ovl_read, read_done);
 	ReadFile(pipe_read, rbuf, sizeof(rbuf),
 		NULL, ioq_ovl_lpo(&ovl_read));
-	if (GetLastError() != ERROR_IO_PENDING)
-		ioq_ovl_trigger(&ovl_read, GetLastError());
+	if (GetLastError() != ERROR_IO_PENDING) {
+		read_error = syserr_last();
+		ioq_ovl_trigger(&ovl_read);
+	}
 }
 
 static void connect_done(struct ioq_ovl *o)
 {
-	assert(!ioq_ovl_error(o));
-	printf("Connected\n");
+	DWORD count;
+	int r;
 
+	assert(!read_error);
+	r = GetOverlappedResult(pipe_read, ioq_ovl_lpo(&ovl_read),
+				&count, TRUE);
+	assert(r);
+
+	printf("Connected\n");
 	read_ptr = 0;
 
+	read_error = 0;
 	ioq_ovl_wait(&ovl_read, read_done);
 	ReadFile(pipe_read, rbuf, sizeof(rbuf),
 		NULL, ioq_ovl_lpo(&ovl_read));
-	if (GetLastError() != ERROR_IO_PENDING)
-		ioq_ovl_trigger(&ovl_read, GetLastError());
+	if (GetLastError() != ERROR_IO_PENDING) {
+		read_error = syserr_last();
+		ioq_ovl_trigger(&ovl_read);
+	}
 }
 
 static void begin_read(void)
@@ -91,15 +111,18 @@ static void begin_read(void)
 		0, 0, 0, NULL);
 	assert(pipe_read != INVALID_HANDLE_VALUE);
 
-	ioq_ovl_init(&ovl_read, &ioq, pipe_read);
+	ioq_ovl_init(&ovl_read, &ioq);
 	r = ioq_bind(&ioq, pipe_read);
 	assert(!r);
 
 	printf("Waiting for connection...\n");
+	read_error = 0;
 	ioq_ovl_wait(&ovl_read, connect_done);
 	ConnectNamedPipe(pipe_read, ioq_ovl_lpo(&ovl_read));
-	if (GetLastError() != ERROR_IO_PENDING)
-		ioq_ovl_trigger(&ovl_read, GetLastError());
+	if (GetLastError() != ERROR_IO_PENDING) {
+		read_error = syserr_last();
+		ioq_ovl_trigger(&ovl_read);
+	}
 }
 
 /************************************************************************
@@ -109,16 +132,23 @@ static void begin_read(void)
 static HANDLE pipe_write;
 static struct ioq_ovl ovl_write;
 static int write_ptr;
+static syserr_t write_error;
 
 static void start_write(void);
 
 static void write_done(struct ioq_ovl *o)
 {
-	assert(!ioq_ovl_error(&ovl_write));
+	DWORD count;
+	int r;
 
-	printf("Wrote %d bytes\n", (int)ioq_ovl_count(&ovl_write));
-	assert(ioq_ovl_count(&ovl_write));
-	write_ptr += ioq_ovl_count(&ovl_write);
+	assert(!write_error);
+	r = GetOverlappedResult(pipe_write,
+		ioq_ovl_lpo(&ovl_write), &count, TRUE);
+	assert(r);
+
+	printf("Wrote %d bytes\n", (int)count);
+	assert(count);
+	write_ptr += count;
 	start_write();
 }
 
@@ -132,11 +162,14 @@ static void start_write(void)
 		return;
 	}
 
+	read_error = 0;
 	ioq_ovl_wait(&ovl_write, write_done);
 	WriteFile(pipe_write, pattern + write_ptr, len,
 		NULL, ioq_ovl_lpo(&ovl_write));
-	if (GetLastError() != ERROR_IO_PENDING)
-		ioq_ovl_trigger(&ovl_write, GetLastError());
+	if (GetLastError() != ERROR_IO_PENDING) {
+		write_error = syserr_last();
+		ioq_ovl_trigger(&ovl_read);
+	}
 }
 
 static void begin_write(void)
@@ -152,7 +185,7 @@ static void begin_write(void)
 		NULL);
 	assert(pipe_write != INVALID_HANDLE_VALUE);
 
-	ioq_ovl_init(&ovl_write, &ioq, pipe_write);
+	ioq_ovl_init(&ovl_write, &ioq);
 	r = ioq_bind(&ioq, pipe_write);
 	assert(!r);
 

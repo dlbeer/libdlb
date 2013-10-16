@@ -34,9 +34,12 @@ typedef void (*afile_func_t)(struct afile *a);
 struct afile_op {
 	afile_func_t		func;
 	struct ioq_ovl		ovl;
+	DWORD			size;
+	syserr_t		error;
 };
 
 struct afile {
+	handle_t		handle;
 	struct afile_op		read;
 	struct afile_op		write;
 };
@@ -74,7 +77,7 @@ void afile_destroy(struct afile *a);
 #ifdef __Windows__
 static inline handle_t afile_get_handle(const struct afile *a)
 {
-	return ioq_ovl_handle(&a->read.ovl);
+	return a->handle;
 }
 #else
 static inline handle_t afile_get_handle(const struct afile *a)
@@ -90,17 +93,6 @@ void afile_write(struct afile *a, const void *data, size_t len,
 /* Obtain the error code and result of a write operation. If the write
  * was successful, the error will be SYSERR_NONE.
  */
-#ifdef __Windows__
-static inline size_t afile_write_size(const struct afile *a)
-{
-	return ioq_ovl_count(&a->write.ovl);
-}
-
-static inline syserr_t afile_write_error(const struct afile *a)
-{
-	return ioq_ovl_error(&a->write.ovl);
-}
-#else
 static inline size_t afile_write_size(const struct afile *a)
 {
 	return a->write.size;
@@ -110,7 +102,6 @@ static inline syserr_t afile_write_error(const struct afile *a)
 {
 	return a->write.error;
 }
-#endif
 
 /* Begin an asynchronous read operation */
 void afile_read(struct afile *a, void *data, size_t len,
@@ -119,17 +110,6 @@ void afile_read(struct afile *a, void *data, size_t len,
 /* Obtain the error code and result of a read operation. If the read
  * was successful, the error will be SYSERR_NONE.
  */
-#ifdef __Windows__
-static inline size_t afile_read_size(const struct afile *a)
-{
-	return ioq_ovl_count(&a->read.ovl);
-}
-
-static inline syserr_t afile_read_error(const struct afile *a)
-{
-	return ioq_ovl_error(&a->read.ovl);
-}
-#else
 static inline size_t afile_read_size(const struct afile *a)
 {
 	return a->read.size;
@@ -139,7 +119,6 @@ static inline syserr_t afile_read_error(const struct afile *a)
 {
 	return a->read.error;
 }
-#endif
 
 /* Cancel all outstanding operations. The result of any IO operations
  * will be undefined.
@@ -147,7 +126,7 @@ static inline syserr_t afile_read_error(const struct afile *a)
 #ifdef __Windows__
 static inline void afile_cancel(struct afile *a)
 {
-	CancelIo(ioq_ovl_handle(&a->read.ovl));
+	CancelIo(a->handle);
 }
 #else
 void afile_cancel(struct afile *a);

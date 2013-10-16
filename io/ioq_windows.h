@@ -49,10 +49,11 @@ static inline int ioq_bind(struct ioq *q, HANDLE hnd)
  * To perform an asynchronous IO operation, do the following:
  *
  *   0. Bind the HANDLE to the IO queue, if not done already.
- *   1. Wait for the operation (*before* it is started).
+ *   1. Call ioq_ovl_wait() (*before* the operation is started).
  *   2. Start the operation, using the LPOVERLAPPED value returned by
  *      ioq_ovl_lpo().
  *   3. Wait for completion.
+ *   4. Call GetOverlappedResult() to obtain completion status.
  *
  * If step (2) fails, no further action is necessary. Waiting for the
  * operation actually does nothing except fill out the OVERLAPPED
@@ -66,34 +67,22 @@ typedef void (*ioq_ovl_func_t)(struct ioq_ovl *h);
 
 struct ioq_ovl {
 	struct runq_task	task;
-	HANDLE			hnd;
 	OVERLAPPED		overlapped;
-
-	/* Completion status */
-	DWORD			number_of_bytes;
-	syserr_t		error;
 };
 
-void ioq_ovl_init(struct ioq_ovl *h, struct ioq *q, HANDLE hnd);
-void ioq_ovl_wait(struct ioq_ovl *h, ioq_ovl_func_t f);
-void ioq_ovl_trigger(struct ioq_ovl *h, syserr_t error);
-
-static inline HANDLE ioq_ovl_handle(const struct ioq_ovl *h)
+static inline void ioq_ovl_init(struct ioq_ovl *h, struct ioq *q)
 {
-	return h->hnd;
+	runq_task_init(&h->task, &q->run);
+}
+
+void ioq_ovl_wait(struct ioq_ovl *h, ioq_ovl_func_t f);
+
+static inline void ioq_ovl_trigger(struct ioq_ovl *h)
+{
+	runq_task_exec(&h->task, h->task.func);
 }
 
 static inline LPOVERLAPPED ioq_ovl_lpo(struct ioq_ovl *h)
 {
 	return &h->overlapped;
-}
-
-static inline DWORD ioq_ovl_count(const struct ioq_ovl *h)
-{
-	return h->number_of_bytes;
-}
-
-static inline syserr_t ioq_ovl_error(const struct ioq_ovl *h)
-{
-	return h->error;
 }

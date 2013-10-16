@@ -58,25 +58,6 @@ void ioq_destroy(struct ioq *q)
 	runq_destroy(&q->run);
 }
 
-static void dispatch_overlapped(struct ioq *q, LPOVERLAPPED overlapped)
-{
-	struct ioq_ovl *h = container_of(overlapped,
-		struct ioq_ovl, overlapped);
-
-	if (!overlapped)
-		return;
-
-	if (GetOverlappedResult(h->hnd, &h->overlapped,
-		    &h->number_of_bytes, TRUE)) {
-		h->error = 0;
-	} else {
-		h->error = GetLastError();
-		h->number_of_bytes = 0;
-	}
-
-	runq_task_exec(&h->task, h->task.func);
-}
-
 int ioq_iterate(struct ioq *q)
 {
 	const int timeout = waitq_next_deadline(&q->wait);
@@ -85,10 +66,15 @@ int ioq_iterate(struct ioq *q)
 	LPOVERLAPPED overlapped;
 
 	if (GetQueuedCompletionStatus(q->iocp, &number_of_bytes, &comp_key,
-		    &overlapped, (timeout < 0) ? INFINITE : timeout))
-		dispatch_overlapped(q, overlapped);
-	else if (GetLastError() != WAIT_TIMEOUT)
+		    &overlapped, (timeout < 0) ? INFINITE : timeout)) {
+		struct ioq_ovl *h = container_of(overlapped,
+			struct ioq_ovl, overlapped);
+
+		if (overlapped)
+			runq_task_exec(&h->task, h->task.func);
+	} else if (GetLastError() != WAIT_TIMEOUT) {
 		return -1;
+	}
 
 	thr_mutex_lock(&q->lock);
 	q->notify_status = 0;
@@ -112,20 +98,8 @@ void ioq_notify(struct ioq *q)
 		PostQueuedCompletionStatus(q->iocp, 0, 0, NULL);
 }
 
-void ioq_ovl_init(struct ioq_ovl *h, struct ioq *q, HANDLE hnd)
-{
-	runq_task_init(&h->task, ioq_runq(q));
-	h->hnd = hnd;
-}
-
 void ioq_ovl_wait(struct ioq_ovl *h, ioq_ovl_func_t f)
 {
 	memset(&h->overlapped, 0, sizeof(h->overlapped));
 	h->task.func = (runq_task_func_t)f;
-}
-
-void ioq_ovl_trigger(struct ioq_ovl *h, syserr_t error)
-{
-	h->error = error;
-	runq_task_exec(&h->task, h->task.func);
 }
