@@ -20,7 +20,7 @@
 #include "prng.h"
 #include "asock.h"
 
-#define N		65536
+#define N		65535
 #define MAX_WRITE	8192
 #define MAX_READ	3172
 
@@ -126,6 +126,8 @@ static void begin_write(void)
 	if (len > MAX_WRITE)
 		len = MAX_WRITE;
 
+	assert(len >= 0);
+
 	if (len) {
 		printf("client: Sending %d bytes\n", len);
 		asock_send(&writer, pattern + write_ptr, len, write_done);
@@ -182,6 +184,9 @@ int main(void)
 
 	init_pattern();
 
+	r = net_start();
+	assert(r >= 0);
+
 	r = ioq_init(&q, 0);
 	assert(r >= 0);
 
@@ -197,5 +202,6 @@ int main(void)
 	writer_exit();
 	reader_exit();
 	ioq_destroy(&q);
+	net_stop();
 	return 0;
 }

@@ -25,9 +25,40 @@
 struct asock;
 typedef void (*asock_func_t)(struct asock *t);
 
+#ifdef __Windows__
 struct asock {
 	struct ioq		*ioq;
-	handle_t		sock;
+	net_sock_t		sock;
+
+	/* Connect/accept request */
+	asock_func_t		ca_func;
+	net_sock_t		ca_sock;
+	neterr_t		ca_error;
+	struct ioq_ovl		ca_ovl;
+	struct asock		*ca_client;
+	uint8_t			ca_addr_info[64];
+	net_sock_t		ca_accept_sock;
+
+	/* Send request */
+	asock_func_t		send_func;
+	net_sock_t		send_sock;
+	DWORD			send_size;
+	neterr_t		send_error;
+	struct ioq_ovl		send_ovl;
+	WSABUF			send_buf;
+
+	/* Receive request */
+	asock_func_t		recv_func;
+	net_sock_t		recv_sock;
+	DWORD			recv_size;
+	neterr_t		recv_error;
+	struct ioq_ovl		recv_ovl;
+	WSABUF			recv_buf;
+};
+#else
+struct asock {
+	struct ioq		*ioq;
+	net_sock_t		sock;
 
 	/* Connect/accept request */
 	asock_func_t		ca_func;
@@ -58,6 +89,7 @@ struct asock {
 	struct runq_task	dispatch_task;
 	int			dispatch_queue;
 };
+#endif
 
 /* Initialize a socket. This socket is created in an inactive state --
  * there is no system resource allocated until you either listen or
@@ -75,7 +107,7 @@ static inline neterr_t asock_get_error(const struct asock *t)
 }
 
 /* Obtain the operating system handle for this socket */
-static inline handle_t asock_get_handle(const struct asock *t)
+static inline net_sock_t asock_get_handle(const struct asock *t)
 {
 	return t->sock;
 }
