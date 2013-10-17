@@ -17,6 +17,8 @@
 #ifndef NET_NET_H_
 #define NET_NET_H_
 
+#define NETERR_NONE ((neterr_t)0)
+
 /* Start up/shut down the network stack. This pair of functions must be
  * called at startup before any network functions are used, and at exit
  * to clean up.
@@ -115,7 +117,5 @@ static inline neterr_t net_start(void)
 
 static inline void net_stop(void) { }
 #endif
-
-#define NETERR_NONE ((neterr_t)0)
 
 #endif
