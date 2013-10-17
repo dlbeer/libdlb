@@ -29,10 +29,13 @@ static void write_done(struct ioq_ovl *o)
 	struct afile_op *op = container_of(o, struct afile_op, ovl);
 	struct afile *a = container_of(op, struct afile, write);
 
-	if (!a->write.error &&
-	    !GetOverlappedResult(a->handle, ioq_ovl_lpo(&a->write.ovl),
-				 &a->write.size, TRUE))
-		a->write.error = GetLastError();
+	if (a->write.error == ERROR_IO_PENDING) {
+		if (GetOverlappedResult(a->handle, ioq_ovl_lpo(&a->write.ovl),
+					&a->write.size, TRUE))
+			a->write.error = 0;
+		else
+			a->write.error = GetLastError();
+	}
 
 	if (a->write.error)
 		a->write.size = 0;
@@ -44,13 +47,17 @@ void afile_write(struct afile *a, const void *data, size_t len,
 		 afile_func_t func)
 {
 	a->write.func = func;
-	a->write.error = 0;
+	a->write.error = ERROR_IO_PENDING;
 
 	ioq_ovl_wait(&a->write.ovl, write_done);
-	WriteFile(a->handle, data, len, NULL, ioq_ovl_lpo(&a->write.ovl));
-	if (GetLastError() != ERROR_IO_PENDING) {
-		a->write.error = GetLastError();
-		ioq_ovl_trigger(&a->write.ovl);
+	if (!WriteFile(a->handle, data, len, NULL,
+		       ioq_ovl_lpo(&a->write.ovl))) {
+		const syserr_t e = GetLastError();
+
+		if (e != ERROR_IO_PENDING) {
+			a->write.error = e;
+			ioq_ovl_trigger(&a->write.ovl);
+		}
 	}
 }
 
@@ -59,10 +66,13 @@ static void read_done(struct ioq_ovl *o)
 	struct afile_op *op = container_of(o, struct afile_op, ovl);
 	struct afile *a = container_of(op, struct afile, read);
 
-	if (!a->read.error &&
-	    !GetOverlappedResult(a->handle, ioq_ovl_lpo(&a->read.ovl),
-				 &a->read.size, TRUE))
-		a->read.error = GetLastError();
+	if (a->read.error == ERROR_IO_PENDING) {
+		if (GetOverlappedResult(a->handle, ioq_ovl_lpo(&a->read.ovl),
+					&a->read.size, TRUE))
+			a->read.error = 0;
+		else
+			a->read.error = GetLastError();
+	}
 
 	if (a->read.error)
 		a->read.size = 0;
@@ -74,12 +84,15 @@ void afile_read(struct afile *a, void *data, size_t len,
 		afile_func_t func)
 {
 	a->read.func = func;
-	a->read.error = 0;
+	a->read.error = ERROR_IO_PENDING;
 
 	ioq_ovl_wait(&a->read.ovl, read_done);
-	ReadFile(a->handle, data, len, NULL, ioq_ovl_lpo(&a->read.ovl));
-	if (GetLastError() != ERROR_IO_PENDING) {
-		a->read.error = GetLastError();
-		ioq_ovl_trigger(&a->read.ovl);
+	if (!ReadFile(a->handle, data, len, NULL, ioq_ovl_lpo(&a->read.ovl))) {
+		const syserr_t e = GetLastError();
+
+		if (e != ERROR_IO_PENDING) {
+			a->read.error = e;
+			ioq_ovl_trigger(&a->read.ovl);
+		}
 	}
 }
