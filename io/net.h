@@ -14,17 +14,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef NET_NET_H_
-#define NET_NET_H_
+#ifndef IO_NET_H_
+#define IO_NET_H_
 
 #define NETERR_NONE ((neterr_t)0)
 
-/* Start up/shut down the network stack. This pair of functions must be
- * called at startup before any network functions are used, and at exit
- * to clean up.
- *
- * net_start() returns an error code (NETERR_NONE if successful).
- */
 #ifdef __Windows__
 #include "winapi.h"
 #include <winsock2.h>
@@ -52,6 +46,12 @@ static inline int net_sock_is_valid(net_sock_t s)
 
 #define NET_SOCK_INVALID INVALID_SOCKET
 
+/* Start up/shut down the network stack. This pair of functions must be
+ * called at startup before any network functions are used, and at exit
+ * to clean up.
+ *
+ * net_start() returns an error code (NETERR_NONE if successful).
+ */
 neterr_t net_start(void);
 
 static inline void net_stop(void)

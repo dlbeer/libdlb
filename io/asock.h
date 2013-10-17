@@ -14,8 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef NET_ASOCK_H_
-#define NET_ASOCK_H_
+#ifndef IO_ASOCK_H_
+#define IO_ASOCK_H_
 
 #include "net.h"
 #include "ioq.h"
