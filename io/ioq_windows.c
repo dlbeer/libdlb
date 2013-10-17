@@ -46,13 +46,11 @@ int ioq_init(struct ioq *q, unsigned int bg_threads)
 		return -1;
 	}
 
-	thr_mutex_init(&q->lock);
 	return 0;
 }
 
 void ioq_destroy(struct ioq *q)
 {
-	thr_mutex_destroy(&q->lock);
 	CloseHandle(q->iocp);
 	waitq_destroy(&q->wait);
 	runq_destroy(&q->run);
@@ -76,10 +74,6 @@ int ioq_iterate(struct ioq *q)
 		return -1;
 	}
 
-	thr_mutex_lock(&q->lock);
-	q->notify_status = 0;
-	thr_mutex_unlock(&q->lock);
-
 	waitq_dispatch(&q->wait, 0);
 	runq_dispatch(&q->run, 0);
 	return 0;
@@ -87,15 +81,7 @@ int ioq_iterate(struct ioq *q)
 
 void ioq_notify(struct ioq *q)
 {
-	int old;
-
-	thr_mutex_lock(&q->lock);
-	old = q->notify_status;
-	q->notify_status = 1;
-	thr_mutex_unlock(&q->lock);
-
-	if (!old)
-		PostQueuedCompletionStatus(q->iocp, 0, 0, NULL);
+	PostQueuedCompletionStatus(q->iocp, 0, 0, NULL);
 }
 
 void ioq_ovl_wait(struct ioq_ovl *h, ioq_ovl_func_t f)

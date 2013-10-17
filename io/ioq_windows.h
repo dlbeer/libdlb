@@ -24,10 +24,6 @@ struct ioq {
 
 	/* IO completion port */
 	HANDLE			iocp;
-
-	/* Notification status */
-	thr_mutex_t		lock;
-	int			notify_status;
 };
 
 /* If you want to perform IO on a handle and use the IO queue for
