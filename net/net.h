@@ -17,8 +17,6 @@
 #ifndef NET_NET_H_
 #define NET_NET_H_
 
-#include "neterr.h"
-
 /* Start up/shut down the network stack. This pair of functions must be
  * called at startup before any network functions are used, and at exit
  * to clean up.
@@ -26,22 +24,89 @@
  * net_start() returns an error code (NETERR_NONE if successful).
  */
 #ifdef __Windows__
-static inline neterr_t net_start(void)
-{
-	WSADATA data;
+#include "winapi.h"
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-	return WSAStartup(MAKEWORD(2, 2), &data);
+typedef DWORD neterr_t;
+
+static inline neterr_t neterr_last(void)
+{
+	return WSAGetLastError();
 }
+
+static inline void neterr_format(neterr_t e, char *buf, size_t max_size)
+{
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, e, 0,
+		      buf, max_size, NULL);
+}
+
+typedef SOCKET net_sock_t;
+
+static inline int net_sock_is_valid(net_sock_t s)
+{
+	return s != INVALID_SOCKET;
+}
+
+#define NET_SOCK_INVALID INVALID_SOCKET
+
+neterr_t net_start(void);
 
 static inline void net_stop(void)
 {
 	WSACleanup();
 }
+
+/* These pointers are looked up by net_start() */
+extern BOOL PASCAL (*net_ConnectEx)(
+	SOCKET s,
+	const struct sockaddr *name,
+	int namelen,
+	PVOID lpSendBuffer,
+	DWORD dwSendDataLength,
+	LPDWORD lpdwBytesSent,
+	LPOVERLAPPED lpOverlapped
+);
+
+extern BOOL (*net_AcceptEx)(
+	SOCKET sListenSocket,
+	SOCKET sAcceptSocket,
+	PVOID lpOutputBuffer,
+	DWORD dwReceiveDataLength,
+	DWORD dwLocalAddressLength,
+	DWORD dwRemoteAddressLength,
+	LPDWORD lpdwBytesReceived,
+	LPOVERLAPPED lpOverlapped
+);
 #else
+#include <errno.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+typedef int neterr_t;
+
+static inline neterr_t neterr_last(void)
+{
+	return errno;
+}
+
+static inline void neterr_format(neterr_t e, char *buf, size_t max_size)
+{
+	strncpy(buf, strerror(e), max_size);
+	buf[max_size - 1] = 0;
+}
+
+typedef int net_sock_t;
+
+static inline int net_sock_is_valid(net_sock_t s)
+{
+	return s >= 0;
+}
+
+#define NET_SOCK_INVALID ((net_sock_t)(-1))
 
 static inline neterr_t net_start(void)
 {
@@ -50,5 +115,7 @@ static inline neterr_t net_start(void)
 
 static inline void net_stop(void) { }
 #endif
+
+#define NETERR_NONE ((neterr_t)0)
 
 #endif

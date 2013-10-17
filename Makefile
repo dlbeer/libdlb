@@ -45,7 +45,6 @@ TESTS = \
     tests/ioq$(TEST) \
     tests/mailbox$(TEST) \
     tests/afile$(TEST) \
-    tests/neterr$(TEST) \
     tests/net$(TEST) \
     tests/adns$(TEST) \
     tests/asock$(TEST)
@@ -138,19 +137,16 @@ tests/mailbox$(TEST): tests/test_mailbox.o io/mailbox.o io/runq.o \
 		    io/thr.o src/slist.o
 	$(CC) -o $@ $^ $(LIB_PTHREAD)
 
-tests/neterr$(TEST): tests/test_neterr.o
-	$(CC) -o $@ $^ $(LIB_NET)
-
-tests/net$(TEST): tests/test_net.o
+tests/net$(TEST): tests/test_net.o net/net.o
 	$(CC) -o $@ $^ $(LIB_NET)
 
 tests/adns$(TEST): tests/test_adns.o net/adns.o io/runq.o src/list.o \
-		   src/slist.o io/thr.o
+		   src/slist.o io/thr.o net/net.o
 	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_NET)
 
 tests/asock$(TEST): tests/test_asock.o io/ioq.o io/waitq.o \
 		    io/runq.o io/thr.o io/clock.o src/slist.o \
-		    src/rbt.o src/rbt_iter.o net/asock.o
+		    src/rbt.o src/rbt_iter.o net/asock.o net/net.o
 	$(CC) -o $@ $^ $(LIB_PTHREAD) $(LIB_RT) $(LIB_NET)
 
 %.o: %.c
