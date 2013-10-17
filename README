@@ -21,7 +21,7 @@ directory are:
     - strbuf: resizable string-buffer
     - vector: resizable array
 
-  * io: asynchronous IO and system utilities:
+  * io: portable asynchronous IO and system utilities:
     - afile: asynchronous file reading/writing
     - clock: portable interface to a monotonic millisecond clock
     - handle: portable file handle abstraction
@@ -31,6 +31,9 @@ directory are:
     - syserr: portable interface to system error codes
     - thr: portable interface to threading primitives
     - waitq: asynchronous timer schedule
+    - net: portable network initialization
+    - adns: asynchronous DNS
+    - asock: asynchronous TCP/IP socket
 
   * tests: automated test suite
 
