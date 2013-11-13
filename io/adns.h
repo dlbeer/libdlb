@@ -100,11 +100,16 @@ struct adns_request {
 /* Initialize a request object */
 void adns_request_init(struct adns_request *r, struct adns_resolver *v);
 
+/* Free any non-NULL result */
+void adns_request_destroy(struct adns_request *r);
+
 typedef void (*adns_request_func_t)(struct adns_request *r);
 
 /* Begin an asynchronous DNS request. Arguments are the same as for
  * getaddrinfo(), except a callback is given instead of a return
  * pointer.
+ *
+ * Any result left over from a previous query will be freed first.
  */
 void adns_request_ask(struct adns_request *r,
 		      const char *hostname, const char *service,
@@ -129,5 +134,8 @@ static inline adns_error_t adns_get_error(const struct adns_request *r)
 {
 	return r->error;
 }
+
+/* Clear the result, if any */
+void adns_clear_result(struct adns_request *r);
 
 #endif

@@ -170,12 +170,28 @@ void adns_request_init(struct adns_request *r, struct adns_resolver *v)
 	r->flags = 0;
 }
 
+void adns_request_destroy(struct adns_request *r)
+{
+	if (r->result)
+		freeaddrinfo(r->result);
+}
+
+void adns_clear_result(struct adns_request *r)
+{
+	if (r->result) {
+		freeaddrinfo(r->result);
+		r->result = NULL;
+	}
+}
+
 void adns_request_ask(struct adns_request *r,
 		      const char *hostname, const char *service,
 		      const struct addrinfo *hints,
 		      adns_request_func_t func)
 {
 	int was_empty;
+
+	adns_clear_result(r);
 
 	r->hostname = hostname;
 	r->service = service;

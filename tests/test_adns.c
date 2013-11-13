@@ -35,7 +35,6 @@ static void handler(struct adns_request *r)
 			(const struct sockaddr_in *)inf->ai_addr;
 
 		printf("%s\n", inet_ntoa(in->sin_addr));
-		freeaddrinfo(inf);
 	} else {
 		char buf[128];
 
@@ -44,6 +43,7 @@ static void handler(struct adns_request *r)
 	}
 
 	count--;
+	adns_request_destroy(r);
 }
 
 int main(int argc, char **argv)
