@@ -73,16 +73,29 @@ static inline void afile_destroy(struct afile *a) { }
 void afile_destroy(struct afile *a);
 #endif
 
-/* Obtain the handle associated with the asynchronous file. */
+/* Obtain or change the handle associated with the asynchronous file.
+ * The handle can be changed only if there are no wait operations in
+ * progress.
+ */
 #ifdef __Windows__
 static inline handle_t afile_get_handle(const struct afile *a)
 {
 	return a->handle;
 }
+
+static inline void afile_set_handle(struct afile *a, handle_t h)
+{
+	a->handle = h;
+}
 #else
 static inline handle_t afile_get_handle(const struct afile *a)
 {
-	return a->fd.fd;
+	return ioq_fd_get_fd(&a->fd);
+}
+
+static inline void afile_set_handle(struct afile *a, handle_t h)
+{
+	ioq_fd_set_fd(&a->fd, h);
 }
 #endif
 

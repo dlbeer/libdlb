@@ -93,6 +93,20 @@ typedef void (*ioq_fd_func_t)(struct ioq_fd *f);
  */
 void ioq_fd_init(struct ioq_fd *f, struct ioq *q, int fd);
 
+/* Get or change the file descriptor associated with this ioq_fd
+ * structure. The file descriptor can be changed only if there is no
+ * wait in progress.
+ */
+static inline int ioq_fd_get_fd(const struct ioq_fd *f)
+{
+	return f->fd;
+}
+
+static inline void ioq_fd_set_fd(struct ioq_fd *f, int fd)
+{
+	f->fd = fd;
+}
+
 /* Obtain the set of IO events which are ready (if any) */
 static inline ioq_fd_mask_t ioq_fd_ready(const struct ioq_fd *f)
 {
