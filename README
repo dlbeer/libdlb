@@ -19,6 +19,7 @@ directory are:
     - slab: pooled object allocator
     - slist: intrusive singly-linked list
     - strbuf: resizable string-buffer
+    - strlcpy: strlcpy() and strlcat()
     - vector: resizable array
 
   * io: portable asynchronous IO and system utilities:

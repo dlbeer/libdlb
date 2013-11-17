@@ -38,6 +38,7 @@ TESTS = \
     tests/bint$(TEST) \
     tests/slist$(TEST) \
     tests/cbuf$(TEST) \
+    tests/strlcpy$(TEST) \
     tests/syserr$(TEST) \
     tests/clock$(TEST) \
     tests/thr$(TEST) \
@@ -107,6 +108,9 @@ tests/slist$(TEST): tests/test_slist.o src/slist.o
 	$(CC) -o $@ $^
 
 tests/cbuf$(TEST): tests/test_cbuf.o src/cbuf.o
+	$(CC) -o $@ $^
+
+tests/strlcpy$(TEST): tests/test_strlcpy.o src/strlcpy.o
 	$(CC) -o $@ $^
 
 tests/syserr$(TEST): tests/test_syserr.o
