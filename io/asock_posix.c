@@ -112,7 +112,7 @@ static int wait_accept(struct asock *t)
 
 		t->ca_error = errno;
 	} else {
-		if (t->ca_client->sock)
+		if (t->ca_client->sock >= 0)
 			close(t->ca_client->sock);
 
 		t->ca_client->sock = r;
@@ -287,6 +287,9 @@ void asock_destroy(struct asock *t)
 
 void asock_close(struct asock *t)
 {
+	if (t->sock < 0)
+		return;
+
 	if (!wait_begin(t, OP_CANCEL))
 		close(t->sock);
 
