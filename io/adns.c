@@ -80,7 +80,7 @@ static int peek_request(struct adns_resolver *r, struct work_req *req)
 	}
 	thr_mutex_unlock(&r->lock);
 
-	return 0;
+	return 1;
 }
 
 static void fulfill_request(struct adns_resolver *r, struct adns_request *q,
@@ -114,7 +114,7 @@ static void do_work(void *arg)
 		int i;
 
 		i = peek_request(r, &req);
-		if (!r) {
+		if (!i) {
 			thr_event_wait(&r->notify);
 			thr_event_clear(&r->notify);
 			continue;
