@@ -61,17 +61,17 @@ int ioq_iterate(struct ioq *q)
 	const int timeout = waitq_next_deadline(&q->wait);
 	DWORD number_of_bytes;
 	ULONG_PTR comp_key;
-	LPOVERLAPPED overlapped;
+	LPOVERLAPPED overlapped = NULL;
 
-	if (GetQueuedCompletionStatus(q->iocp, &number_of_bytes, &comp_key,
-		    &overlapped, (timeout < 0) ? INFINITE : timeout)) {
+	GetQueuedCompletionStatus(q->iocp, &number_of_bytes, &comp_key,
+		    &overlapped, (timeout < 0) ? INFINITE : timeout);
+
+	if (overlapped) {
 		struct ioq_ovl *h = container_of(overlapped,
 			struct ioq_ovl, overlapped);
 
 		if (overlapped)
 			runq_task_exec(&h->task, h->task.func);
-	} else if (GetLastError() != WAIT_TIMEOUT) {
-		return -1;
 	}
 
 	waitq_dispatch(&q->wait, 0);
