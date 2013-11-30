@@ -25,6 +25,7 @@ endif
 
 TESTS = \
     tests/containers$(TEST) \
+    tests/protothread$(TEST) \
     tests/bytes$(TEST) \
     tests/list$(TEST) \
     tests/vector$(TEST) \
@@ -68,6 +69,9 @@ clean:
 	rm -f tests/*$(TEST)
 
 tests/containers$(TEST): tests/test_containers.o
+	$(CC) -o $@ $^
+
+tests/protothread$(TEST): tests/test_protothread.o
 	$(CC) -o $@ $^
 
 tests/bytes$(TEST): tests/test_bytes.o
