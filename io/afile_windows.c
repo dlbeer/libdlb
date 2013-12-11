@@ -50,7 +50,7 @@ void afile_write(struct afile *a, const void *data, size_t len,
 	a->write.error = ERROR_IO_PENDING;
 
 	ioq_ovl_wait(&a->write.ovl, write_done);
-	if (!WriteFile(a->handle, data, len, NULL,
+	if (!WriteFile(a->handle, data, len, &a->write.size,
 		       ioq_ovl_lpo(&a->write.ovl))) {
 		const syserr_t e = GetLastError();
 
@@ -58,6 +58,9 @@ void afile_write(struct afile *a, const void *data, size_t len,
 			a->write.error = e;
 			ioq_ovl_trigger(&a->write.ovl);
 		}
+	} else {
+		a->write.error = 0;
+		ioq_ovl_trigger(&a->write.ovl);
 	}
 }
 
@@ -87,12 +90,16 @@ void afile_read(struct afile *a, void *data, size_t len,
 	a->read.error = ERROR_IO_PENDING;
 
 	ioq_ovl_wait(&a->read.ovl, read_done);
-	if (!ReadFile(a->handle, data, len, NULL, ioq_ovl_lpo(&a->read.ovl))) {
+	if (!ReadFile(a->handle, data, len, &a->read.size,
+		      ioq_ovl_lpo(&a->read.ovl))) {
 		const syserr_t e = GetLastError();
 
 		if (e != ERROR_IO_PENDING) {
 			a->read.error = e;
 			ioq_ovl_trigger(&a->read.ovl);
 		}
+	} else {
+		a->read.error = 0;
+		ioq_ovl_trigger(&a->read.ovl);
 	}
 }
