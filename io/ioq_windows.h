@@ -68,6 +68,7 @@ struct ioq_ovl {
 
 static inline void ioq_ovl_init(struct ioq_ovl *h, struct ioq *q)
 {
+	memset(&h->overlapped, 0, sizeof(h->overlapped));
 	runq_task_init(&h->task, &q->run);
 }
 
