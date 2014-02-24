@@ -40,6 +40,7 @@ TESTS = \
     tests/slist$(TEST) \
     tests/cbuf$(TEST) \
     tests/strlcpy$(TEST) \
+    tests/arena$(TEST) \
     tests/syserr$(TEST) \
     tests/clock$(TEST) \
     tests/thr$(TEST) \
@@ -115,6 +116,9 @@ tests/cbuf$(TEST): tests/test_cbuf.o src/cbuf.o
 	$(CC) -o $@ $^
 
 tests/strlcpy$(TEST): tests/test_strlcpy.o src/strlcpy.o
+	$(CC) -o $@ $^
+
+tests/arena$(TEST): tests/test_arena.o src/arena.o
 	$(CC) -o $@ $^
 
 tests/syserr$(TEST): tests/test_syserr.o
