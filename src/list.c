@@ -40,3 +40,18 @@ void list_remove(struct list_node *item)
 	item->prev = NULL;
 	item->next = NULL;
 }
+
+void list_move(struct list_node *dst, struct list_node *src)
+{
+	if (list_is_empty(src)) {
+		dst->next = dst->prev = dst;
+	} else {
+		dst->next = src->next;
+		dst->prev = src->prev;
+
+		dst->next->prev = dst;
+		dst->prev->next = dst;
+
+		src->next = src->prev = src;
+	}
+}

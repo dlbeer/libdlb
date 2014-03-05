@@ -54,4 +54,7 @@ void list_insert(struct list_node *item, struct list_node *after);
 /* Remove a node from its containing list. */
 void list_remove(struct list_node *item);
 
+/* Move the contents of one list to another in constant time. */
+void list_move(struct list_node *dst, struct list_node *src);
+
 #endif

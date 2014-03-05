@@ -63,13 +63,13 @@ static void test_remove(int mask)
 			list_remove(&recs[i].node);
 }
 
-static void test_verify(int mask)
+static void test_verify(struct list_node *l, int mask)
 {
 	int even_count = (mask & 2) ? (N / 2) : 0;
 	int odd_count = (mask & 1) ? (N / 2) : 0;
 	struct list_node *n;
 
-	for (n = lst.next; n != &lst; n = n->next) {
+	for (n = l->next; n != l; n = n->next) {
 		struct record *r = (struct record *)n;
 
 		if (r->v & 1)
@@ -84,16 +84,28 @@ static void test_verify(int mask)
 
 int main(void)
 {
+	struct list_node copy;
+
 	test_init();
 
 	test_start_odd();
-	test_verify(1);
+	test_verify(&lst, 1);
 	test_add_evens();
-	test_verify(3);
+	test_verify(&lst, 3);
+
+	list_move(&copy, &lst);
+	test_verify(&copy, 3);
+	assert(list_is_empty(&lst));
+
+	list_move(&lst, &copy);
+	test_verify(&lst, 3);
+	assert(list_is_empty(&copy));
+
 	test_remove(1);
-	test_verify(2);
+	test_verify(&lst, 2);
+
 	test_remove(2);
-	test_verify(0);
+	test_verify(&lst, 0);
 
 	return 0;
 }
