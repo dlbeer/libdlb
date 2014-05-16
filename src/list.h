@@ -41,7 +41,7 @@ struct list_node {
 void list_init(struct list_node *head);
 
 /* Check to see if a list contains anything. */
-static inline int list_is_empty(struct list_node *lst)
+static inline int list_is_empty(const struct list_node *lst)
 {
 	return lst->next == lst;
 }
