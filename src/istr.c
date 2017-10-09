@@ -40,15 +40,6 @@ istr_t istr_pool_alloc(struct istr_pool *p, const char *text, int length)
 	if (length < 0)
 		length = strlen(text);
 
-	/* Give the garbage collector a chance to run */
-	if (p->desc_count >= p->gc_threshold) {
-		istr_pool_gc(p);
-
-		p->gc_threshold = p->desc_count * 4;
-		if (p->gc_threshold < 128)
-			p->gc_threshold = 128;
-	}
-
 	/* Allocate a descriptor */
 	d = slab_alloc(&p->descs);
 	if (!d)
@@ -70,6 +61,15 @@ istr_t istr_pool_alloc(struct istr_pool *p, const char *text, int length)
 	p->desc_count++;
 	d->next = p->all;
 	p->all = d;
+
+	/* Give the garbage collector a chance to run */
+	if (p->desc_count >= p->gc_threshold) {
+		istr_pool_gc(p);
+
+		p->gc_threshold = p->desc_count * 4;
+		if (p->gc_threshold < 128)
+			p->gc_threshold = 128;
+	}
 
 	return d;
 }
